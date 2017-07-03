@@ -164,7 +164,7 @@ float g_CameraTheta = 0.0f; // Ângulo no plano ZX em relação ao eixo Z
 float g_CameraPhi = 0.0f;   // Ângulo em relação ao eixo Y
 float g_CameraDistance = 3.5f; // Distância da câmera para a origem
 
-glm::vec4 camera_position_c  = glm::vec4(0.0f,0.0f,3.0f,1.0f);
+glm::vec4 camera_position_c  = glm::vec4(0.0f,5.0f,3.0f,1.0f);
 glm::vec4 camera_lookat_l    = glm::vec4(0.0f,0.0f,-1.0f,0.0f);    //vetores tem que ser definiidos globalmente para serem acessados na função de callback
 glm::vec4 camera_up_vector   = glm::vec4(0.0f,1.0f,0.0f,0.0f);
 
@@ -289,6 +289,11 @@ int main(int argc, char* argv[])
     ComputeNormals(&cowmodel);
     BuildTrianglesAndAddToVirtualScene(&cowmodel);
 
+    ObjModel shipmodel("../../data/ship.obj");
+    ComputeNormals(&shipmodel);
+    BuildTrianglesAndAddToVirtualScene(&shipmodel);
+    //aaaaaaaaaa
+
     if ( argc > 1 )
     {
         ObjModel model(argv[1]);
@@ -396,6 +401,7 @@ int main(int argc, char* argv[])
         #define BUNNY  1
         #define PLANE  2
         #define COW    3
+        #define SHIP   4
 
         // Desenhamos o modelo da esfera
         /*model = Matrix_Translate(-1.0f,0.0f,0.0f)
@@ -430,6 +436,11 @@ int main(int argc, char* argv[])
         glUniformMatrix4fv(model_uniform, 1 , GL_FALSE , glm::value_ptr(model));
         glUniform1i(object_id_uniform, COW);
         DrawVirtualObject("cow");
+
+        model = Matrix_Translate(1.0f,2.5f,0.0f);
+        glUniformMatrix4fv(model_uniform, 1 , GL_FALSE , glm::value_ptr(model));
+        glUniform1i(object_id_uniform, SHIP);
+        DrawVirtualObject("ship");
 
         // Pegamos um vértice com coordenadas de modelo (0.5, 0.5, 0.5, 1) e o
         // passamos por todos os sistemas de coordenadas armazenados nas
