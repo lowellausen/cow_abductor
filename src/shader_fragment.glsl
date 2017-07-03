@@ -22,6 +22,7 @@ uniform mat4 projection;
 #define SPHERE 0
 #define BUNNY  1
 #define PLANE  2
+#define COW    3
 uniform int object_id;
 
 // Parâmetros da axis-aligned bounding box (AABB) do modelo
@@ -32,6 +33,7 @@ uniform vec4 bbox_max;
 uniform sampler2D TextureImage0;
 uniform sampler2D TextureImage1;
 uniform sampler2D TextureImage2;
+uniform sampler2D TextureImage3;
 
 // O valor de saída ("out") de um Fragment Shader é a cor final do fragmento.
 out vec3 color;
@@ -102,7 +104,7 @@ void main()
         U = (theta+M_PI)/(2*M_PI);
         V = (phi + M_PI_2)/M_PI;
     }
-    else if ( object_id == BUNNY )
+    else if ( (object_id == BUNNY) || (object_id == COW) )
     {
         // PREENCHA AQUI as coordenadas de textura do coelho, computadas com
         // projeção planar XY em COORDENADAS DO MODELO. Utilize como referência
@@ -122,17 +124,57 @@ void main()
         U = (position_model.x - minx) / (maxx - minx);
         V = (position_model.y - miny) / (maxy - miny);
     }
+    /*else if ( object_id == COW )
+    {
+        // PREENCHA AQUI as coordenadas de textura do coelho, computadas com
+        // projeção planar XY em COORDENADAS DO MODELO. Utilize como referência
+        // o slide 106 do documento "Aula_20_e_21_Mapeamento_de_Texturas.pdf".
+        float minx = bbox_min.x;
+        float maxx = bbox_max.x;
+
+        float miny = bbox_min.y;
+        float maxy = bbox_max.y;
+
+        float minz = bbox_min.z;
+        float maxz = bbox_max.z;
+
+
+        // Utilize as variáveis min* /max* definidas acima para normalizar as
+        // coordenadas de textura U e V dentro do intervalo [0,1]. Veja 149
+        // do documento "Aula_20_e_21_Mapeamento_de_Texturas.pdf".
+        U = (position_model.x - minx) / (maxx - minx);
+        V = (position_model.y - miny) / (maxy - miny);
+    }
+    */
     else if ( object_id == PLANE )
     {
         // Coordenadas de textura do plano,i
         // obtidas do arquivo OBJ.
-        U = texcoords.x;
-        V = texcoords.y;
+        //U = texcoords.x;
+        //V = texcoords.y;
+
+
+        U = position_model.z;  // MIRRORED_REPEAT NOT 10/10
+        V = position_model.x;
+
+        if(U>=1.0f){
+            U = (U - floor(U));
+        }
+        if(U<=0.0f){
+            U = -1.0f * U;
+            U = 1 - (U - floor(U));
+        }
+        if(V<=0.0f){
+            V = -1.0f * V;
+            V = 1 - (V - floor(V));
+        }
+
     }
 
     // Obtemos a refletância difusa a partir da leitura da imagem TextureImage0
     vec3 Kd0 = texture(TextureImage0, vec2(U,V)).rgb;
     vec3 Kd1 = texture(TextureImage1, vec2(U,V)).rgb;
+
 
     // Equação de Iluminação
     float lambert = max(0,dot(n,l));
@@ -141,6 +183,14 @@ void main()
 
     if (object_id == SPHERE){   //MOSTRANDO AS LUZINHAS SOMENTE NO GLOBO, COMO PARECE SER NO EXEMPLO DO MOODLE
         color = color + Kd1 * (1-pow(lambert, 0.2));
+    }
+    if (object_id == PLANE){
+        vec3 Kd_grass = texture(TextureImage2, vec2(U,V)).rgb;
+        color = Kd_grass * (lambert + 0.01);
+    }
+    if (object_id == COW){
+        vec3 Kd_cow = texture(TextureImage3, vec2(U,V)).rgb;
+        color = Kd_cow * (lambert + 0.01);
     }
 
     // Cor final com correção gamma, considerando monitor sRGB.
