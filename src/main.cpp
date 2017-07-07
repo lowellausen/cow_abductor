@@ -118,6 +118,8 @@ void MouseButtonCallback(GLFWwindow* window, int button, int action, int mods);
 void CursorPosCallback(GLFWwindow* window, double xpos, double ypos);
 void ScrollCallback(GLFWwindow* window, double xoffset, double yoffset);
 
+void DrawCow(glm::vec3 pos);
+
 // Definimos uma estrutura que armazenará dados necessários para renderizar
 // cada objeto da cena virtual.
 struct SceneObject
@@ -170,6 +172,9 @@ glm::vec4 ship_position      = glm::vec4(1.0f,2.5f,0.0f,1.0f);
 glm::vec4 camera_lookat_l    = glm::vec4(0.0f,0.0f,g_CameraDistance,0.0f);
 //glm::vec4 camera_position_c  = glm::vec4(0.0f,4.0f,-2.0f,0.0f);
 glm::vec4 camera_position_c  = camera_lookat_l + ship_position;
+
+//model global por perfomance
+glm::mat4 model = Matrix_Identity();
 
 // Variáveis que controlam rotação do antebraço
 float g_ForearmAngleZ = 0.0f;
@@ -396,7 +401,7 @@ int main(int argc, char* argv[])
             projection = Matrix_Orthographic(l, r, b, t, nearplane, farplane);
         }
 
-        glm::mat4 model = Matrix_Identity(); // Transformação identidade de modelagem
+        model = Matrix_Identity(); // Transformação identidade de modelagem
 
         // Enviamos as matrizes "view" e "projection" para a placa de vídeo
         // (GPU). Veja o arquivo "shader_vertex.glsl", onde estas são
@@ -445,10 +450,19 @@ int main(int argc, char* argv[])
 
         // Desenhamos  vaca
         //model = Matrix_Scale(10.0f, 1.0f, 10.0f);
-        model = Matrix_Translate(1.0f,-0.5f,0.0f);
+        /*model = Matrix_Translate(1.0f,-0.5f,0.0f);
         glUniformMatrix4fv(model_uniform, 1 , GL_FALSE , glm::value_ptr(model));
         glUniform1i(object_id_uniform, COW);
-        DrawVirtualObject("cow");
+        DrawVirtualObject("cow");*/
+
+        // por que isso está matando o fps? ): TODO
+        DrawCow(glm::vec3(1.0f,-0.5f,-3.0f));
+        DrawCow(glm::vec3(2.0f,-0.5f,5.0f));
+        DrawCow(glm::vec3(-3.0f,-0.5f,9.0f));
+        DrawCow(glm::vec3(4.0f,-0.5f,-7.0f));
+        DrawCow(glm::vec3(5.0f,-0.5f,9.5f));
+        DrawCow(glm::vec3(-6.0f,-0.5f,5.0f));
+        DrawCow(glm::vec3(7.0f,-0.5f,2.0f));
 
         //ship
         model = Matrix_Translate(ship_position.x, ship_position.y, ship_position.z);
@@ -495,7 +509,15 @@ int main(int argc, char* argv[])
     return 0;
 }
 
-
+// função que desenha uma vaca
+void DrawCow(glm::vec3 pos){
+    // Desenhamos  vaca
+    //model = Matrix_Scale(10.0f, 1.0f, 10.0f);
+    model = Matrix_Translate(pos.x, pos.y, pos.z);
+    glUniformMatrix4fv(model_uniform, 1 , GL_FALSE , glm::value_ptr(model));
+    glUniform1i(object_id_uniform, 3);
+    DrawVirtualObject("cow");
+}
 
 // Função que carrega uma imagem para ser utilizada como textura
 void LoadTextureImage(const char* filename)
