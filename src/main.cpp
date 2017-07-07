@@ -167,9 +167,9 @@ float g_CameraDistance = 3.5f; // Distância da câmera para a origem
 //vetores tem que ser definiidos globalmente para serem acessados na função de callback
 glm::vec4 camera_up_vector   = glm::vec4(0.0f,1.0f,0.0f,0.0f);
 glm::vec4 ship_position      = glm::vec4(1.0f,2.5f,0.0f,1.0f);
-glm::vec4 camera_lookat_l    = glm::vec4(0.0f,0.0f,-1.0f,0.0f);
-glm::vec4 camera_position_c  = glm::vec4(0.0f,4.0f,-2.0f,0.0f);
-//glm::vec4 camera_position_c  = ship_position - camera_lookat_l;
+glm::vec4 camera_lookat_l    = glm::vec4(0.0f,0.0f,g_CameraDistance,0.0f);
+//glm::vec4 camera_position_c  = glm::vec4(0.0f,4.0f,-2.0f,0.0f);
+glm::vec4 camera_position_c  = camera_lookat_l + ship_position;
 
 // Variáveis que controlam rotação do antebraço
 float g_ForearmAngleZ = 0.0f;
@@ -295,7 +295,6 @@ int main(int argc, char* argv[])
     ObjModel shipmodel("../../data/ship.obj");
     ComputeNormals(&shipmodel);
     BuildTrianglesAndAddToVirtualScene(&shipmodel);
-    //aaaaaaaaaa
 
 
     if ( argc > 1 )
@@ -346,11 +345,12 @@ int main(int argc, char* argv[])
         // variáveis g_CameraDistance, g_CameraPhi, e g_CameraTheta são
         // controladas pelo mouse do usuário. Veja as funções CursorPosCallback()
         // e ScrollCallback().
-        camera_lookat_l.y = sin(g_CameraPhi);
-        camera_lookat_l.z = cos(g_CameraPhi)*cos(g_CameraTheta);
-        camera_lookat_l.x = cos(g_CameraPhi)*sin(g_CameraTheta);
+        camera_lookat_l.y = g_CameraDistance * sin(g_CameraPhi);
+        camera_lookat_l.z = g_CameraDistance * cos(g_CameraPhi)*cos(g_CameraTheta);
+        camera_lookat_l.x = g_CameraDistance * cos(g_CameraPhi)*sin(g_CameraTheta);
 
-        camera_lookat_l = camera_lookat_l/norm(camera_lookat_l);
+        //camera_lookat_l = camera_lookat_l/norm(camera_lookat_l);
+        camera_position_c = ship_position + camera_lookat_l;
 
         // Abaixo definimos as varáveis que efetivamente definem a câmera virtual.
         // Veja slide 159 do documento "Aula_08_Sistemas_de_Coordenadas.pdf".
@@ -1186,24 +1186,24 @@ void KeyCallback(GLFWwindow* window, int key, int scancode, int action, int mod)
     if (key == GLFW_KEY_W)
     {
         float inc = 0.1f;
-        camera_position_c -= inc* camera_lookat_l;    //W e D movimentam a camera na direção do vetor de view (que está, na verdade, em torno da origem)
-        camera_position_c.y += inc* camera_lookat_l.y;
+        ship_position -= inc* camera_lookat_l;    //W e D movimentam a camera na direção do vetor de view (que está, na verdade, em torno da origem)
+        ship_position.y += inc* camera_lookat_l.y;
     }
     if (key == GLFW_KEY_S)
     {
         float inc = 0.1f;
-        camera_position_c += inc* camera_lookat_l;
-        camera_position_c.y -= inc* camera_lookat_l.y;
+        ship_position += inc* camera_lookat_l;
+        ship_position.y -= inc* camera_lookat_l.y;
     }
     if (key == GLFW_KEY_A)
     {
         float inc = 0.1f;
-        camera_position_c += inc* crossproduct(camera_lookat_l,camera_up_vector);
+        ship_position += inc* crossproduct(camera_lookat_l,camera_up_vector);
     }                                       // A e D andam em direção a um vetor que aponta para o lado da câmera
     if (key == GLFW_KEY_D)
     {
         float inc = 0.1f;
-        camera_position_c -= inc* crossproduct(camera_lookat_l,camera_up_vector);
+        ship_position -= inc* crossproduct(camera_lookat_l,camera_up_vector);
     }
 
     // Se o usuário apertar a tecla espaço, resetamos os ângulos de Euler para zero.
