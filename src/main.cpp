@@ -418,6 +418,7 @@ int main(int argc, char* argv[])
         // Desenhamos o modelo da esfera
         // DESATIVANDO CULLING PARA PODER VER DENTRO DA ESFERA!! "ENVIRONMENT MAPPING"
         glDisable(GL_CULL_FACE);
+
         model = Matrix_Translate(camera_position_c.x, camera_position_c.y, camera_position_c.z);
         model = model * Matrix_Scale(100.0f, 100.0f, 100.0f);
         /*model = model
@@ -427,6 +428,13 @@ int main(int argc, char* argv[])
         glUniformMatrix4fv(model_uniform, 1 , GL_FALSE , glm::value_ptr(model));
         glUniform1i(object_id_uniform, SPHERE);
         DrawVirtualObject("sphere");
+
+
+        //ship
+        model = Matrix_Translate(ship_position.x, ship_position.y, ship_position.z);
+        glUniformMatrix4fv(model_uniform, 1 , GL_FALSE , glm::value_ptr(model));
+        glUniform1i(object_id_uniform, SHIP);
+        DrawVirtualObject("ship");
 
         glEnable(GL_CULL_FACE);
 
@@ -464,11 +472,6 @@ int main(int argc, char* argv[])
         DrawCow(glm::vec3(-6.0f,-0.5f,5.0f));
         DrawCow(glm::vec3(7.0f,-0.5f,2.0f));
 
-        //ship
-        model = Matrix_Translate(ship_position.x, ship_position.y, ship_position.z);
-        glUniformMatrix4fv(model_uniform, 1 , GL_FALSE , glm::value_ptr(model));
-        glUniform1i(object_id_uniform, SHIP);
-        DrawVirtualObject("ship");
 
         // Pegamos um vértice com coordenadas de modelo (0.5, 0.5, 0.5, 1) e o
         // passamos por todos os sistemas de coordenadas armazenados nas
