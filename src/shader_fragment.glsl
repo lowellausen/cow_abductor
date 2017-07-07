@@ -23,6 +23,7 @@ uniform mat4 projection;
 #define BUNNY  1
 #define PLANE  2
 #define COW    3
+#define SHIP   4
 uniform int object_id;
 
 // Parâmetros da axis-aligned bounding box (AABB) do modelo
@@ -34,6 +35,8 @@ uniform sampler2D TextureImage0;
 uniform sampler2D TextureImage1;
 uniform sampler2D TextureImage2;
 uniform sampler2D TextureImage3;
+uniform sampler2D TextureImage4;
+
 
 // O valor de saída ("out") de um Fragment Shader é a cor final do fragmento.
 out vec3 color;
@@ -170,6 +173,23 @@ void main()
         }
 
     }
+    else if ( object_id == SHIP )
+    {
+        float minx = bbox_min.x;
+        float maxx = bbox_max.x;
+
+        float miny = bbox_min.y;
+        float maxy = bbox_max.y;
+
+        float minz = bbox_min.z;
+        float maxz = bbox_max.z;
+
+        // Utilize as variáveis min*/max* definidas acima para normalizar as
+        // coordenadas de textura U e V dentro do intervalo [0,1]. Veja 149
+        // do documento "Aula_20_e_21_Mapeamento_de_Texturas.pdf".
+        U = (position_model.x - minx) / (maxx - minx);
+        V = (position_model.z - minz) / (maxz - minz);
+    }
 
     // Obtemos a refletância difusa a partir da leitura da imagem TextureImage0
     vec3 Kd0 = texture(TextureImage0, vec2(U,V)).rgb;
@@ -179,10 +199,10 @@ void main()
     // Equação de Iluminação
     float lambert = max(0,dot(n,l));
 
-    color = Kd0 * (lambert + 0.01);
+    color = vec3(255,255,255).rgb ;
 
     if (object_id == SPHERE){   //MOSTRANDO AS LUZINHAS SOMENTE NO GLOBO, COMO PARECE SER NO EXEMPLO DO MOODLE
-        color = color + Kd1 * (1-pow(lambert, 0.2));
+        color = Kd0;
     }
     if (object_id == PLANE){
         vec3 Kd_grass = texture(TextureImage2, vec2(U,V)).rgb;
@@ -191,6 +211,10 @@ void main()
     if (object_id == COW){
         vec3 Kd_cow = texture(TextureImage3, vec2(U,V)).rgb;
         color = Kd_cow * (lambert + 0.01);
+    }
+    if (object_id == SHIP){
+        vec3 Kd_ship = texture(TextureImage4, vec2(U,V)).rgb;
+        color = Kd_ship * (lambert + 0.01);
     }
 
     // Cor final com correção gamma, considerando monitor sRGB.

@@ -273,6 +273,7 @@ int main(int argc, char* argv[])
     LoadTextureImage("../../data/tc-earth_nightmap_citylights.gif"); // TextureImage1
     LoadTextureImage("../../data/grass.jpg");                        // TextureImage2
     LoadTextureImage("../../data/cowT.jpg");                          // TextureImage3
+    LoadTextureImage("../../data/ufoT.png");                          // TextureImage4
 
 
     // Construímos a representação de objetos geométricos através de malhas de triângulos
@@ -313,6 +314,8 @@ int main(int argc, char* argv[])
     glEnable(GL_CULL_FACE);
     glCullFace(GL_BACK);
     glFrontFace(GL_CCW);
+
+
 
     // Variáveis auxiliares utilizadas para chamada à função
     // TextRendering_ShowModelViewProjection(), armazenando matrizes 4x4.
@@ -369,7 +372,7 @@ int main(int argc, char* argv[])
         // estão no sentido negativo! Veja slides 180-183 do documento
         // "Aula_09_Projecoes.pdf".
         float nearplane = -0.1f;  // Posição do "near plane"
-        float farplane  = -100.0f; // Posição do "far plane"
+        float farplane  = -1000.0f; // Posição do "far plane"
 
         if (g_UsePerspectiveProjection)
         {
@@ -408,15 +411,21 @@ int main(int argc, char* argv[])
         #define SHIP   4
 
         // Desenhamos o modelo da esfera
-        /*model = Matrix_Translate(-1.0f,0.0f,0.0f)
+        // DESATIVANDO CULLING PARA PODER VER DENTRO DA ESFERA!! "ENVIRONMENT MAPPING"
+        glDisable(GL_CULL_FACE);
+        model = Matrix_Translate(camera_position_c.x, camera_position_c.y, camera_position_c.z);
+        model = model * Matrix_Scale(100.0f, 100.0f, 100.0f);
+        /*model = model
               * Matrix_Rotate_Z(0.6f)
               * Matrix_Rotate_X(0.2f)
-              * Matrix_Rotate_Y(g_AngleY + (float)glfwGetTime() * 0.1f);
+              * Matrix_Rotate_Y(g_AngleY + (float)glfwGetTime() * 0.1f);*/
         glUniformMatrix4fv(model_uniform, 1 , GL_FALSE , glm::value_ptr(model));
         glUniform1i(object_id_uniform, SPHERE);
-        DrawVirtualObject("sphere");*/
+        DrawVirtualObject("sphere");
 
-        // SHERE UP HERE!!!!!!
+        glEnable(GL_CULL_FACE);
+
+        // SpHERE UP HERE!!!!!!
 
         // Desenhamos o modelo do coelho
         /*model = Matrix_Translate(1.0f,0.0f,0.0f)
@@ -485,6 +494,8 @@ int main(int argc, char* argv[])
     // Fim do programa
     return 0;
 }
+
+
 
 // Função que carrega uma imagem para ser utilizada como textura
 void LoadTextureImage(const char* filename)
@@ -621,6 +632,7 @@ void LoadShadersFromFiles()
     glUniform1i(glGetUniformLocation(program_id, "TextureImage1"), 1);
     glUniform1i(glGetUniformLocation(program_id, "TextureImage2"), 2);
     glUniform1i(glGetUniformLocation(program_id, "TextureImage3"), 3);
+    glUniform1i(glGetUniformLocation(program_id, "TextureImage4"), 4);
     glUseProgram(0);
 }
 
