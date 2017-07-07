@@ -297,6 +297,7 @@ int main(int argc, char* argv[])
     BuildTrianglesAndAddToVirtualScene(&shipmodel);
     //aaaaaaaaaa
 
+
     if ( argc > 1 )
     {
         ObjModel model(argv[1]);
