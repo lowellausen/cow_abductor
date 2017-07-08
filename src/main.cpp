@@ -172,7 +172,7 @@ bool g_MiddleMouseButtonPressed = false; // Análogo para botão do meio do mous
 // renderização.
 float g_CameraTheta = 0.0f; // Ângulo no plano ZX em relação ao eixo Z
 float g_CameraPhi = 0.0f;   // Ângulo em relação ao eixo Y
-float g_CameraDistance = 3.5f; // Distância da câmera para a origem
+float g_CameraDistance = 10.0f; // Distância da câmera para a origem
 
 //vetores tem que ser definiidos globalmente para serem acessados na função de callback
 glm::vec4 camera_up_vector   = glm::vec4(0.0f,1.0f,0.0f,0.0f);
@@ -402,7 +402,7 @@ int main(int argc, char* argv[])
         // estão no sentido negativo! Veja slides 180-183 do documento
         // "Aula_09_Projecoes.pdf".
         float nearplane = -0.1f;  // Posição do "near plane"
-        float farplane  = -20.0f; // Posição do "far plane"
+        float farplane  = -100.0f; // Posição do "far plane"
 
         if (g_UsePerspectiveProjection)
         {
@@ -444,8 +444,9 @@ int main(int argc, char* argv[])
         // DESATIVANDO CULLING PARA PODER VER DENTRO DA ESFERA!! "ENVIRONMENT MAPPING"
         glDisable(GL_CULL_FACE);
 
+        #define SKY_SIZE 50.0
         model = Matrix_Translate(camera_position_c.x, camera_position_c.y, camera_position_c.z);
-        model = model * Matrix_Scale(20.0f, 20.0f, 20.0f);
+        model = model * Matrix_Scale(SKY_SIZE, SKY_SIZE, SKY_SIZE);
         /*model = model
               * Matrix_Rotate_Z(0.6f)
               * Matrix_Rotate_X(0.2f)
@@ -1242,6 +1243,7 @@ void KeyCallback(GLFWwindow* window, int key, int scancode, int action, int mod)
     if (key == GLFW_KEY_X)// desce a nave
     {
         //g_AngleX += (mod & GLFW_MOD_SHIFT) ? -delta : delta;
+        if (ship_position.y <= -0.5) return;
         ship_position.y -= 0.1f;
     }
 
@@ -1252,7 +1254,8 @@ void KeyCallback(GLFWwindow* window, int key, int scancode, int action, int mod)
     if (key == GLFW_KEY_Z) //sobe a nave
     {
         //g_AngleZ += (mod & GLFW_MOD_SHIFT) ? -delta : delta;
-         ship_position.y += 0.1f;
+        if (ship_position.y >= 7.0f) return;
+        ship_position.y += 0.1f;
     }
 
 
