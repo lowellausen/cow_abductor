@@ -138,7 +138,8 @@ struct GameCow
     bool alive = true; //if cow is alive
 };
 
-void DrawCow(GameCow *cow);
+void DrawCow(int i);
+bool Bbox_collision(glm::vec4 A_min, glm::vec4 A_max, glm::vec4 B_min, glm::vec4 B_max);
 
 
 // Abaixo definimos variáveis globais utilizadas em várias funções do código.
@@ -182,6 +183,9 @@ glm::vec4 ship_position      = glm::vec4(1.0f,2.5f,0.0f,1.0f);
 glm::vec4 camera_lookat_l    = glm::vec4(0.0f,0.0f,g_CameraDistance,0.0f);
 //glm::vec4 camera_position_c  = glm::vec4(0.0f,4.0f,-2.0f,0.0f);
 glm::vec4 camera_position_c  = camera_lookat_l + ship_position;
+
+#define NUM_COWS 7    //vetor de vacas
+GameCow cows[NUM_COWS];
 
 //model global por perfomance
 glm::mat4 model = Matrix_Identity();
@@ -339,8 +343,7 @@ int main(int argc, char* argv[])
     glm::mat4 the_model;
     glm::mat4 the_view;
 
-     #define NUM_COWS 7
-    GameCow cows[NUM_COWS];
+
     /*for(i=0; i<NUM_COWS;i++){
     }*/
     cows[0].pos = glm::vec3(1.0f,-0.5f,-3.0f);
@@ -494,7 +497,7 @@ int main(int argc, char* argv[])
         // por que isso está matando o fps? ): TODO
         // desenhamos as vacas
         for(int i=0; i<NUM_COWS;i++){
-            DrawCow(&cows[i]);
+            DrawCow(i);
         }
 
 
@@ -539,13 +542,21 @@ int main(int argc, char* argv[])
 }
 
 // função que desenha uma vaca
-void DrawCow(GameCow *cow){
+void DrawCow(int i){
     // Desenhamos  vaca
     //model = Matrix_Scale(10.0f, 1.0f, 10.0f);
-    cow->model = Matrix_Translate(cow->pos.x, cow->pos.y, cow->pos.z);
-    glUniformMatrix4fv(model_uniform, 1 , GL_FALSE , glm::value_ptr(cow->model));
+    cows[i].model = Matrix_Translate(cows[i].pos.x, cows[i].pos.y, cows[i].pos.z);
+    glUniformMatrix4fv(model_uniform, 1 , GL_FALSE , glm::value_ptr(cows[i].model));
     glUniform1i(object_id_uniform, 3);
     DrawVirtualObject("cow");
+}
+
+//Função que testa colisão entre duas bounding boxes A e B
+//recebe duas bbox EM COORDENADAS GLOBAIS
+bool Bbox_collision(glm::vec4 A_min, glm::vec4 A_max, glm::vec4 B_min, glm::vec4 B_max){
+    return (A_min.x <= B_max.x && A_max.x >= B_min.x) &&
+            (A_min.y <= B_max.y && A_max.y >= B_min.y) &&
+            (A_min.z <= B_max.z && A_max.z >= B_min.z);
 }
 
 // Função que carrega uma imagem para ser utilizada como textura
