@@ -140,6 +140,7 @@ struct GameCow
 
 void DrawCow(int i);
 bool Bbox_collision(glm::vec4 A_min, glm::vec4 A_max, glm::vec4 B_min, glm::vec4 B_max);
+int AllCowShip_collision();
 
 
 // Abaixo definimos variáveis globais utilizadas em várias funções do código.
@@ -183,6 +184,13 @@ glm::vec4 ship_position      = glm::vec4(1.0f,2.5f,0.0f,1.0f);
 glm::vec4 camera_lookat_l    = glm::vec4(0.0f,0.0f,g_CameraDistance,0.0f);
 //glm::vec4 camera_position_c  = glm::vec4(0.0f,4.0f,-2.0f,0.0f);
 glm::vec4 camera_position_c  = camera_lookat_l + ship_position;
+
+//mais variáveis globais que vão ser úteis
+glm::vec4 cowM_min;
+glm::vec4 cowM_max;
+glm::vec4 shipM_min;
+glm::vec4 shipM_max;
+glm::mat4 ship_model;
 
 #define NUM_COWS 7    //vetor de vacas
 GameCow cows[NUM_COWS];
@@ -317,6 +325,20 @@ int main(int argc, char* argv[])
     ComputeNormals(&shipmodel);
     BuildTrianglesAndAddToVirtualScene(&shipmodel);
 
+    ObjModel poolmodel("../../data/bloodpool.obj");
+    ComputeNormals(&poolmodel);
+    BuildTrianglesAndAddToVirtualScene(&poolmodel);
+
+    glm::vec3 cowB_min = g_VirtualScene["cow"].bbox_min; //bbox de modelo das vacas
+    glm::vec3 cowB_max = g_VirtualScene["cow"].bbox_max;
+    glm::vec3 shipB_min = g_VirtualScene["ship"].bbox_min; //bbox de modelo na nave
+    glm::vec3 shipB_max = g_VirtualScene["ship"].bbox_max;
+
+    cowM_min = glm::vec4(cowB_min.x, cowB_min.y, cowB_min.z, 1.0f);
+    cowM_max = glm::vec4(cowB_max.x, cowB_max.y, cowB_max.z, 1.0f);
+    shipM_min = glm::vec4(shipB_min.x, shipB_min.y, shipB_min.z, 1.0f);
+    shipM_max = glm::vec4(shipB_max.x, shipB_max.y, shipB_max.z, 1.0f);
+
 
     if ( argc > 1 )
     {
@@ -353,6 +375,14 @@ int main(int argc, char* argv[])
     cows[4].pos =(glm::vec3(5.0f,-0.5f,9.5f));
     cows[5].pos =(glm::vec3(-6.0f,-0.5f,5.0f));
     cows[6].pos =(glm::vec3(7.0f,-0.5f,2.0f));
+    /*cows[0].model = Matrix_Translate(cows[0].pos.x, cows[0].pos.y, cows[0].pos.z);
+    cows[1].model = Matrix_Translate(cows[1].pos.x, cows[1].pos.y, cows[1].pos.z);
+    cows[2].model = Matrix_Translate(cows[2].pos.x, cows[2].pos.y, cows[2].pos.z);
+    cows[3].model = Matrix_Translate(cows[3].pos.x, cows[3].pos.y, cows[3].pos.z);
+    cows[4].model = Matrix_Translate(cows[4].pos.x, cows[4].pos.y, cows[4].pos.z);
+    cows[5].model = Matrix_Translate(cows[5].pos.x, cows[5].pos.y, cows[5].pos.z);
+    cows[6].model = Matrix_Translate(cows[6].pos.x, cows[6].pos.y, cows[6].pos.z);*/
+
 
     // Ficamos em loop, renderizando, até que o usuário feche a janela
     while (!glfwWindowShouldClose(window))
@@ -441,6 +471,7 @@ int main(int argc, char* argv[])
         #define PLANE  2
         #define COW    3
         #define SHIP   4
+        #define POOL   5
 
         // Desenhamos o modelo da esfera
         // DESATIVANDO CULLING PARA PODER VER DENTRO DA ESFERA!! "ENVIRONMENT MAPPING"
@@ -462,8 +493,9 @@ int main(int argc, char* argv[])
         // definimos uma fonte de luz sob a nave
         glUniform4f(ship_light_uniform, ship_position.x, ship_position.y, ship_position.z, 1.0f);
 
-        model = Matrix_Translate(ship_position.x, ship_position.y, ship_position.z);
-        glUniformMatrix4fv(model_uniform, 1 , GL_FALSE , glm::value_ptr(model));
+        ship_model = Matrix_Identity();
+        ship_model = Matrix_Translate(ship_position.x, ship_position.y, ship_position.z);
+        glUniformMatrix4fv(model_uniform, 1 , GL_FALSE , glm::value_ptr(ship_model));
         glUniform1i(object_id_uniform, SHIP);
         DrawVirtualObject("ship");
 
@@ -547,8 +579,14 @@ void DrawCow(int i){
     //model = Matrix_Scale(10.0f, 1.0f, 10.0f);
     cows[i].model = Matrix_Translate(cows[i].pos.x, cows[i].pos.y, cows[i].pos.z);
     glUniformMatrix4fv(model_uniform, 1 , GL_FALSE , glm::value_ptr(cows[i].model));
-    glUniform1i(object_id_uniform, 3);
-    DrawVirtualObject("cow");
+    if(cows[i].alive){
+        glUniform1i(object_id_uniform, 3); //3 é o npumero da vaca
+        DrawVirtualObject("cow");
+    }
+    else{
+        glUniform1i(object_id_uniform, 5); //3 é o npumero da vaca
+        DrawVirtualObject("pool");
+    }
 }
 
 //Função que testa colisão entre duas bounding boxes A e B
@@ -557,6 +595,25 @@ bool Bbox_collision(glm::vec4 A_min, glm::vec4 A_max, glm::vec4 B_min, glm::vec4
     return (A_min.x <= B_max.x && A_max.x >= B_min.x) &&
             (A_min.y <= B_max.y && A_max.y >= B_min.y) &&
             (A_min.z <= B_max.z && A_max.z >= B_min.z);
+}
+
+//Função que testa se há colisão da nave contra alguma vaca e retorne o índice desta vaca, -1 caso não haja
+int AllCowShip_collision(){
+    int i;
+    glm::vec4 shipW_min = ship_model * shipM_min;
+    glm::vec4 shipW_max = ship_model * shipM_max;
+
+    glm::vec4 cowW_min;
+    glm::vec4 cowW_max;
+    for(i=0; i < NUM_COWS; i++){
+        if(!cows[i].alive) continue;
+        cowW_min = cows[i].model * cowM_min;
+        cowW_max = cows[i].model * cowM_max;
+        if(Bbox_collision(cowW_min, cowW_max, shipW_min,shipW_max)){
+            return i;
+        }
+    }
+    return -1;
 }
 
 // Função que carrega uma imagem para ser utilizada como textura
@@ -1260,6 +1317,12 @@ void KeyCallback(GLFWwindow* window, int key, int scancode, int action, int mod)
         //g_AngleZ += (mod & GLFW_MOD_SHIFT) ? -delta : delta;
         if (ship_position.y >= 7.0f) return;
         ship_position.y += 0.1f;
+    }
+
+    int c = AllCowShip_collision();
+    if(c!=-1){
+        cows[c].alive = false;
+        cows[c].pos.y -= 0.5f;
     }
 
 

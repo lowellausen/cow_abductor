@@ -24,6 +24,7 @@ uniform mat4 projection;
 #define PLANE  2
 #define COW    3
 #define SHIP   4
+#define POOL   5
 uniform int object_id;
 
 uniform vec4 ship_light;
@@ -73,12 +74,19 @@ void main()
     vec4 l_dir = vec4(0.0, -1.0, 0.0,0.0) ;
     vec4 l = normalize(ship_light - p);
 
+    vec4 r = -l + 2*n*(dot(n,l));
+
     // Vetor que define o sentido da câmera em relação ao ponto atual.
     vec4 v = normalize(camera_position - p);
 
     // Coordenadas de textura U e V
     float U = 0.0;
     float V = 0.0;
+
+    vec3 Kd; // Refletância difusa
+    vec3 Ks; // Refletância especular
+    float q=0.0; // Expoente especular para o modelo de iluminação de Phong
+
 
     if ( object_id == SPHERE )
     {
@@ -197,17 +205,23 @@ void main()
         U = (position_model.x - minx) / (maxx - minx);
         V = (position_model.z - minz) / (maxz - minz);
     }
+    else if(object_id == POOL){
+        Kd = vec3(0.5,0.0,0.00);
+        Ks = vec3(0.8,0.0,0.0);
+        q = 32.0;
+    }
 
     // Obtemos a refletância difusa a partir da leitura da imagem TextureImage0
-    vec3 Kd0 = texture(TextureImage0, vec2(U,V)).rgb;
-    vec3 Kd1 = texture(TextureImage1, vec2(U,V)).rgb;
+
+    //vec3 Kd1 = texture(TextureImage1, vec2(U,V)).rgb;
 
 
     // Equação de Iluminação
     float lambert = max(0,dot(n,l));
+    float phong = pow(max(0, dot(r,v)),q);
 
     vec3 ambient_light_spectrum = vec3(0.1,0.1,0.1);
-    vec3 light_spectrum = vec3(0.0,1.0,0.0);
+    vec3 light_spectrum = vec3(1.0,1.0,1.0);
 
     float alpha = radians(30);
 
@@ -219,6 +233,7 @@ void main()
     color = vec3(255,255,255).rgb ;
 
     if (object_id == SPHERE){
+        vec3 Kd0 = texture(TextureImage0, vec2(U,V)).rgb;
         color = Kd0;
     }
     if (object_id == PLANE){
@@ -233,6 +248,10 @@ void main()
     if (object_id == SHIP){
         vec3 Kd_ship = texture(TextureImage4, vec2(U,V)).rgb;
         color = Kd_ship * (lambert + AMBIENT);
+    }
+    if(object_id == POOL){
+        color = Kd * light_spectrum * lambert
+          + Ks * light_spectrum * (phong+AMBIENT);
     }
 
     // Cor final com correção gamma, considerando monitor sRGB.
