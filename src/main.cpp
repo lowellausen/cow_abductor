@@ -152,6 +152,8 @@ float g_AngleX = 0.0f;
 float g_AngleY = 0.0f;
 float g_AngleZ = 0.0f;
 
+#define INC 0.2f
+
 // "g_LeftMouseButtonPressed = true" se o usuário está com o botão esquerdo do mouse
 // pressionado no momento atual. Veja função MouseButtonCallback().
 bool g_LeftMouseButtonPressed = false;
@@ -200,6 +202,7 @@ GLint projection_uniform;
 GLint object_id_uniform;
 GLint bbox_min_uniform;
 GLint bbox_max_uniform;
+GLint ship_light_uniform;
 
 // Número de texturas carregadas pela função LoadTextureImage()
 GLuint g_NumLoadedTextures = 0;
@@ -357,8 +360,9 @@ int main(int argc, char* argv[])
         camera_lookat_l.z = g_CameraDistance * cos(g_CameraPhi)*cos(g_CameraTheta);
         camera_lookat_l.x = g_CameraDistance * cos(g_CameraPhi)*sin(g_CameraTheta);
 
-        //camera_lookat_l = camera_lookat_l/norm(camera_lookat_l);
         camera_position_c = ship_position + camera_lookat_l;
+
+        camera_lookat_l = camera_lookat_l/norm(camera_lookat_l);
 
         // Abaixo definimos as varáveis que efetivamente definem a câmera virtual.
         // Veja slide 159 do documento "Aula_08_Sistemas_de_Coordenadas.pdf".
@@ -431,6 +435,9 @@ int main(int argc, char* argv[])
 
 
         //ship
+        // definimos uma fonte de luz sob a nave
+        glUniform4f(ship_light_uniform, ship_position.x, ship_position.y, ship_position.z, 1.0f);
+
         model = Matrix_Translate(ship_position.x, ship_position.y, ship_position.z);
         glUniformMatrix4fv(model_uniform, 1 , GL_FALSE , glm::value_ptr(model));
         glUniform1i(object_id_uniform, SHIP);
@@ -650,6 +657,8 @@ void LoadShadersFromFiles()
     object_id_uniform       = glGetUniformLocation(program_id, "object_id"); // Variável "object_id" em shader_fragment.glsl
     bbox_min_uniform        = glGetUniformLocation(program_id, "bbox_min");
     bbox_max_uniform        = glGetUniformLocation(program_id, "bbox_max");
+    ship_light_uniform      = glGetUniformLocation(program_id, "ship_light");
+
 
     // Variáveis em "shader_fragment.glsl" para acesso das imagens de textura
     glUseProgram(program_id);
@@ -1205,42 +1214,40 @@ void KeyCallback(GLFWwindow* window, int key, int scancode, int action, int mod)
 
     float delta = 3.141592 / 16; // 22.5 graus, em radianos.
 
-    if (key == GLFW_KEY_X && action == GLFW_PRESS)
+    if (key == GLFW_KEY_X)// desce a nave
     {
-        g_AngleX += (mod & GLFW_MOD_SHIFT) ? -delta : delta;
+        //g_AngleX += (mod & GLFW_MOD_SHIFT) ? -delta : delta;
+        ship_position.y -= 0.1f;
     }
 
     if (key == GLFW_KEY_Y && action == GLFW_PRESS)
     {
         g_AngleY += (mod & GLFW_MOD_SHIFT) ? -delta : delta;
     }
-    if (key == GLFW_KEY_Z && action == GLFW_PRESS)
+    if (key == GLFW_KEY_Z) //sobe a nave
     {
-        g_AngleZ += (mod & GLFW_MOD_SHIFT) ? -delta : delta;
+        //g_AngleZ += (mod & GLFW_MOD_SHIFT) ? -delta : delta;
+         ship_position.y += 0.1f;
     }
 
 
     if (key == GLFW_KEY_W)
     {
-        float inc = 0.1f;
-        ship_position -= inc* camera_lookat_l;    //W e D movimentam a camera na direção do vetor de view (que está, na verdade, em torno da origem)
-        ship_position.y += inc* camera_lookat_l.y;
+        ship_position -= INC* camera_lookat_l;
+        ship_position.y += INC* camera_lookat_l.y;
     }
     if (key == GLFW_KEY_S)
     {
-        float inc = 0.1f;
-        ship_position += inc* camera_lookat_l;
-        ship_position.y -= inc* camera_lookat_l.y;
+        ship_position += INC* camera_lookat_l;
+        ship_position.y -= INC* camera_lookat_l.y;
     }
     if (key == GLFW_KEY_A)
     {
-        float inc = 0.1f;
-        ship_position += inc* crossproduct(camera_lookat_l,camera_up_vector);
+        ship_position += INC* crossproduct(camera_lookat_l,camera_up_vector);
     }                                       // A e D andam em direção a um vetor que aponta para o lado da câmera
     if (key == GLFW_KEY_D)
     {
-        float inc = 0.1f;
-        ship_position -= inc* crossproduct(camera_lookat_l,camera_up_vector);
+        ship_position -= INC* crossproduct(camera_lookat_l,camera_up_vector);
     }
 
     // Se o usuário apertar a tecla espaço, resetamos os ângulos de Euler para zero.

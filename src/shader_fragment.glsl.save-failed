@@ -228,7 +228,7 @@ void main()
     if (object_id == COW){
         vec3 Kd_cow = texture(TextureImage3, vec2(U,V)).rgb;
         //color = Kd_cow * (lambert + 0.01);
-        color = Kd_cow * (lambert*light_spectrum + AMBIENT);
+        color = Kd_cow * (lambert + AMBIENT) * (light_spectrum*(1-lambert));
     }
     if (object_id == SHIP){
         vec3 Kd_ship = texture(TextureImage4, vec2(U,V)).rgb;
