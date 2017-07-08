@@ -1424,7 +1424,7 @@ void KeyCallback(GLFWwindow* window, int key, int scancode, int action, int mod)
             }
     }
 
-
+    if(!under_abduction){
     if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
     {
         ship_position -= INC* camera_lookat_l;
@@ -1442,6 +1442,7 @@ void KeyCallback(GLFWwindow* window, int key, int scancode, int action, int mod)
     if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
     {
         ship_position -= INC* crossproduct(camera_lookat_l,camera_up_vector);
+    }
     }
 
     // Se o usuário apertar a tecla espaço, resetamos os ângulos de Euler para zero.
