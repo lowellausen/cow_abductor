@@ -136,13 +136,14 @@ struct GameCow
     glm::vec4 pos = glm::vec4(0.0f,0.0f,0.0f, 1.0f); //cow position
     glm::mat4 model = Matrix_Identity() * Matrix_Translate(pos.x, pos.y, pos.z);
     bool alive = true; //if cow is alive
-    bool abducted = false;
+    int abducted = 0;
 };
 
 void DrawCow(int i);
 void AbductCow();
 bool Bbox_collision(glm::vec4 A_min, glm::vec4 A_max, glm::vec4 B_min, glm::vec4 B_max);
 int AllCowShip_collision();
+void Maintain_abduction();
 
 
 // Abaixo definimos variáveis globais utilizadas em várias funções do código.
@@ -194,6 +195,8 @@ glm::vec4 cowM_max;
 glm::vec4 shipM_min;
 glm::vec4 shipM_max;
 glm::mat4 ship_model;
+bool under_abduction = false;
+int cow_abducted = -1;
 
 #define NUM_COWS 7    //vetor de vacas
 GameCow cows[NUM_COWS];
@@ -531,6 +534,10 @@ int main(int argc, char* argv[])
 
         // por que isso está matando o fps? ): TODO
         // desenhamos as vacas
+        if(under_abduction){
+            Maintain_abduction();
+        }
+
         for(int i=0; i<NUM_COWS;i++){
             DrawCow(i);
         }
@@ -1158,25 +1165,59 @@ GLuint CreateGpuProgram(GLuint vertex_shader_id, GLuint fragment_shader_id)
     return program_id;
 }
 
-void AbductCow(){
+/*void AbductCow(){
     int index;
-    int t0 = glfwGetTime();
-    int t1;
-    int t;
+    double t0 = glfwGetTime();
+    double t1;
+    double t;
     index = CowCrossHair();
     if (index != -1){
         while (!cows[index].abducted){
             t1 = glfwGetTime();
             t = t1 - t0;
             t0 = t1;
-            cows[index].pos.y += 0.5*t;
+            cows[index].pos.y += 0.0001f;
             bool abducted = CowShip_collision(index);
-            if (abducted)
+            if (abducted){
+                printf("sdnsdo");
                 cows[index].alive = false;
+            }
             DrawCow(index);
         }
     }
+}*/
+
+void AbductCow(){
+    int index;
+
+    index = CowCrossHair();
+
+    if (index != -1){
+        cows[index].abducted = 1;
+        under_abduction = true;
+        cow_abducted = index;
+    }
 }
+
+void Maintain_abduction(){
+    bool colide = CowShip_collision(cow_abducted);
+    if(colide){
+            cows[cow_abducted].alive = false;
+            if (cows[cow_abducted].pos.y == -0.5f){
+                cows[cow_abducted].pos.y -= 0.5f;
+            }
+    }
+
+    if(cows[cow_abducted].alive){
+        cows[cow_abducted].pos.y += 0.01f;
+    }else{
+        cows[cow_abducted].abducted = 2;
+        under_abduction = false;
+        cow_abducted = -1;
+    }
+}
+
+
 
 // Definição da função que será chamada sempre que a janela for redimensionada,
 // por consequência alterando o tamanho do "framebuffer" (região de memória
