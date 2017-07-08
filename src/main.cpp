@@ -133,12 +133,6 @@ struct SceneObject
     glm::vec3    bbox_max;
 };
 
-struct GameCow
-{
-    glm::vec3 pos; //cow position
-    bool alive = true; //if cow is alive
-};
-
 // Abaixo definimos variáveis globais utilizadas em várias funções do código.
 
 // A cena virtual é uma lista de objetos nomeados, guardados em um dicionário
@@ -338,21 +332,6 @@ int main(int argc, char* argv[])
     glm::mat4 the_view;
 
     // Ficamos em loop, renderizando, até que o usuário feche a janela
-
-    #define NUM_COWS 7
-    GameCow cows[NUM_COWS];
-    /*for(i=0; i<NUM_COWS;i++){
-
-    }*/
-    cows[0].pos = glm::vec3(1.0f,-0.5f,-3.0f);
-    cows[1].pos =(glm::vec3(2.0f,-0.5f,5.0f));
-    cows[2].pos =(glm::vec3(-3.0f,-0.5f,9.0f));
-    cows[3].pos =(glm::vec3(4.0f,-0.5f,-7.0f));
-    cows[4].pos =(glm::vec3(5.0f,-0.5f,9.5f));
-    cows[5].pos =(glm::vec3(-6.0f,-0.5f,5.0f));
-    cows[6].pos =(glm::vec3(7.0f,-0.5f,2.0f));
-
-
     while (!glfwWindowShouldClose(window))
     {
         // Aqui executamos as operações de renderização
@@ -402,7 +381,7 @@ int main(int argc, char* argv[])
         // estão no sentido negativo! Veja slides 180-183 do documento
         // "Aula_09_Projecoes.pdf".
         float nearplane = -0.1f;  // Posição do "near plane"
-        float farplane  = -20.0f; // Posição do "far plane"
+        float farplane  = -1000.0f; // Posição do "far plane"
 
         if (g_UsePerspectiveProjection)
         {
@@ -445,7 +424,7 @@ int main(int argc, char* argv[])
         glDisable(GL_CULL_FACE);
 
         model = Matrix_Translate(camera_position_c.x, camera_position_c.y, camera_position_c.z);
-        model = model * Matrix_Scale(20.0f, 20.0f, 20.0f);
+        model = model * Matrix_Scale(100.0f, 100.0f, 100.0f);
         /*model = model
               * Matrix_Rotate_Z(0.6f)
               * Matrix_Rotate_X(0.2f)
@@ -492,17 +471,13 @@ int main(int argc, char* argv[])
         DrawVirtualObject("cow");*/
 
         // por que isso está matando o fps? ): TODO
-        /*DrawCow(glm::vec3(1.0f,-0.5f,-3.0f));
+        DrawCow(glm::vec3(1.0f,-0.5f,-3.0f));
         DrawCow(glm::vec3(2.0f,-0.5f,5.0f));
         DrawCow(glm::vec3(-3.0f,-0.5f,9.0f));
         DrawCow(glm::vec3(4.0f,-0.5f,-7.0f));
         DrawCow(glm::vec3(5.0f,-0.5f,9.5f));
         DrawCow(glm::vec3(-6.0f,-0.5f,5.0f));
-        DrawCow(glm::vec3(7.0f,-0.5f,2.0f));*/
-
-        for(int i=0; i<NUM_COWS;i++){
-            DrawCow(cows[i].pos);
-        }
+        DrawCow(glm::vec3(7.0f,-0.5f,2.0f));
 
 
         // Pegamos um vértice com coordenadas de modelo (0.5, 0.5, 0.5, 1) e o
@@ -1256,21 +1231,21 @@ void KeyCallback(GLFWwindow* window, int key, int scancode, int action, int mod)
     }
 
 
-    if (key == GLFW_KEY_W)
+    if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
     {
         ship_position -= INC* camera_lookat_l;
         ship_position.y += INC* camera_lookat_l.y;
     }
-    if (key == GLFW_KEY_S)
+    if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
     {
         ship_position += INC* camera_lookat_l;
         ship_position.y -= INC* camera_lookat_l.y;
     }
-    if (key == GLFW_KEY_A)
+    if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS)
     {
         ship_position += INC* crossproduct(camera_lookat_l,camera_up_vector);
     }                                       // A e D andam em direção a um vetor que aponta para o lado da câmera
-    if (key == GLFW_KEY_D)
+    if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
     {
         ship_position -= INC* crossproduct(camera_lookat_l,camera_up_vector);
     }
