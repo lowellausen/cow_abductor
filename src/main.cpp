@@ -118,8 +118,6 @@ void MouseButtonCallback(GLFWwindow* window, int button, int action, int mods);
 void CursorPosCallback(GLFWwindow* window, double xpos, double ypos);
 void ScrollCallback(GLFWwindow* window, double xoffset, double yoffset);
 
-void DrawCow(glm::vec3 pos);
-
 // Definimos uma estrutura que armazenará dados necessários para renderizar
 // cada objeto da cena virtual.
 struct SceneObject
@@ -132,6 +130,16 @@ struct SceneObject
     glm::vec3    bbox_min; // Axis-Aligned Bounding Box do objeto
     glm::vec3    bbox_max;
 };
+
+struct GameCow
+{
+    glm::vec3 pos = glm::vec3(0.0f,0.0f,0.0f); //cow position
+    glm::mat4 model = Matrix_Identity() * Matrix_Translate(pos.x, pos.y, pos.z);
+    bool alive = true; //if cow is alive
+};
+
+void DrawCow(GameCow *cow);
+
 
 // Abaixo definimos variáveis globais utilizadas em várias funções do código.
 
@@ -331,6 +339,18 @@ int main(int argc, char* argv[])
     glm::mat4 the_model;
     glm::mat4 the_view;
 
+     #define NUM_COWS 7
+    GameCow cows[NUM_COWS];
+    /*for(i=0; i<NUM_COWS;i++){
+    }*/
+    cows[0].pos = glm::vec3(1.0f,-0.5f,-3.0f);
+    cows[1].pos =(glm::vec3(2.0f,-0.5f,5.0f));
+    cows[2].pos =(glm::vec3(-3.0f,-0.5f,9.0f));
+    cows[3].pos =(glm::vec3(4.0f,-0.5f,-7.0f));
+    cows[4].pos =(glm::vec3(5.0f,-0.5f,9.5f));
+    cows[5].pos =(glm::vec3(-6.0f,-0.5f,5.0f));
+    cows[6].pos =(glm::vec3(7.0f,-0.5f,2.0f));
+
     // Ficamos em loop, renderizando, até que o usuário feche a janela
     while (!glfwWindowShouldClose(window))
     {
@@ -472,13 +492,11 @@ int main(int argc, char* argv[])
         DrawVirtualObject("cow");*/
 
         // por que isso está matando o fps? ): TODO
-        DrawCow(glm::vec3(1.0f,-0.5f,-3.0f));
-        DrawCow(glm::vec3(2.0f,-0.5f,5.0f));
-        DrawCow(glm::vec3(-3.0f,-0.5f,9.0f));
-        DrawCow(glm::vec3(4.0f,-0.5f,-7.0f));
-        DrawCow(glm::vec3(5.0f,-0.5f,9.5f));
-        DrawCow(glm::vec3(-6.0f,-0.5f,5.0f));
-        DrawCow(glm::vec3(7.0f,-0.5f,2.0f));
+        // desenhamos as vacas
+        for(int i=0; i<NUM_COWS;i++){
+            DrawCow(&cows[i]);
+        }
+
 
 
         // Pegamos um vértice com coordenadas de modelo (0.5, 0.5, 0.5, 1) e o
@@ -521,11 +539,11 @@ int main(int argc, char* argv[])
 }
 
 // função que desenha uma vaca
-void DrawCow(glm::vec3 pos){
+void DrawCow(GameCow *cow){
     // Desenhamos  vaca
     //model = Matrix_Scale(10.0f, 1.0f, 10.0f);
-    model = Matrix_Translate(pos.x, pos.y, pos.z);
-    glUniformMatrix4fv(model_uniform, 1 , GL_FALSE , glm::value_ptr(model));
+    cow->model = Matrix_Translate(cow->pos.x, cow->pos.y, cow->pos.z);
+    glUniformMatrix4fv(model_uniform, 1 , GL_FALSE , glm::value_ptr(cow->model));
     glUniform1i(object_id_uniform, 3);
     DrawVirtualObject("cow");
 }
