@@ -139,6 +139,7 @@ struct GameCow
 };
 
 void DrawCow(int i);
+void AbductCow();
 bool Bbox_collision(glm::vec4 A_min, glm::vec4 A_max, glm::vec4 B_min, glm::vec4 B_max);
 int AllCowShip_collision();
 
@@ -584,7 +585,7 @@ void DrawCow(int i){
         glUniform1i(object_id_uniform, 3); //3 é o nÚmero da vaca
         DrawVirtualObject("cow");
     }
-    else{
+    else if (cows[i].pos.y = 0.0f) {
         glUniform1i(object_id_uniform, 5); //5 É O NÚMERO DO SANGUE
         DrawVirtualObject("pool");
     }
@@ -1138,6 +1139,17 @@ GLuint CreateGpuProgram(GLuint vertex_shader_id, GLuint fragment_shader_id)
     return program_id;
 }
 
+void AbductCow(){
+    int index;
+    index = CowCrossHair();
+    if (index != -1){
+
+            cows[index].pos.y += 0.5;
+            DrawCow(index);
+
+    }
+}
+
 // Definição da função que será chamada sempre que a janela for redimensionada,
 // por consequência alterando o tamanho do "framebuffer" (região de memória
 // onde são armazenados os pixels da imagem).
@@ -1331,14 +1343,16 @@ void KeyCallback(GLFWwindow* window, int key, int scancode, int action, int mod)
     if (key == GLFW_KEY_Z) //sobe a nave
     {
         //g_AngleZ += (mod & GLFW_MOD_SHIFT) ? -delta : delta;
-        if (ship_position.y >= 7.0f) return;
+        if (ship_position.y >= 5.0f) return;
         ship_position.y += 0.1f;
     }
 
     int c = AllCowShip_collision();
     if(c!=-1){
-        cows[c].alive = false;
-        cows[c].pos.y -= 0.5f;
+            cows[c].alive = false;
+            if (cows[c].pos.y == -0.5f){
+                cows[c].pos.y -= 0.5f;
+            }
     }
 
 
@@ -1371,13 +1385,8 @@ void KeyCallback(GLFWwindow* window, int key, int scancode, int action, int mod)
         g_ForearmAngleZ = 0.0f;
         g_TorsoPositionX = 0.0f;
         g_TorsoPositionY = 0.0f;*/
-        int c2 = CowCrossHair();
-        if( c2 !=-1){
-            printf("%d ", c2);
-        }
+       AbductCow();
     }
-
-
     // Se o usuário apertar a tecla P, utilizamos projeção perspectiva.
     if (key == GLFW_KEY_P && action == GLFW_PRESS)
     {
