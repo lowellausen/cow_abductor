@@ -133,7 +133,7 @@ struct SceneObject
 
 struct GameCow
 {
-    glm::vec3 pos = glm::vec3(0.0f,0.0f,0.0f); //cow position
+    glm::vec4 pos = glm::vec4(0.0f,0.0f,0.0f, 1.0f); //cow position
     glm::mat4 model = Matrix_Identity() * Matrix_Translate(pos.x, pos.y, pos.z);
     bool alive = true; //if cow is alive
 };
@@ -163,6 +163,7 @@ float g_AngleY = 0.0f;
 float g_AngleZ = 0.0f;
 
 #define INC 0.2f
+#define ALPHA 0.523599
 
 // "g_LeftMouseButtonPressed = true" se o usuário está com o botão esquerdo do mouse
 // pressionado no momento atual. Veja função MouseButtonCallback().
@@ -368,13 +369,13 @@ int main(int argc, char* argv[])
 
     /*for(i=0; i<NUM_COWS;i++){
     }*/
-    cows[0].pos = glm::vec3(1.0f,-0.5f,-3.0f);
-    cows[1].pos =(glm::vec3(2.0f,-0.5f,5.0f));
-    cows[2].pos =(glm::vec3(-3.0f,-0.5f,9.0f));
-    cows[3].pos =(glm::vec3(4.0f,-0.5f,-7.0f));
-    cows[4].pos =(glm::vec3(5.0f,-0.5f,9.5f));
-    cows[5].pos =(glm::vec3(-6.0f,-0.5f,5.0f));
-    cows[6].pos =(glm::vec3(7.0f,-0.5f,2.0f));
+    cows[0].pos = glm::vec4(1.0f,-0.5f,-3.0f, 1.0f);
+    cows[1].pos =(glm::vec4(2.0f,-0.5f,5.0f, 1.0f));
+    cows[2].pos =(glm::vec4(-3.0f,-0.5f,9.0f, 1.0f));
+    cows[3].pos =(glm::vec4(4.0f,-0.5f,-7.0f, 1.0f));
+    cows[4].pos =(glm::vec4(5.0f,-0.5f,9.5f, 1.0f));
+    cows[5].pos =(glm::vec4(-6.0f,-0.5f,5.0f, 1.0f));
+    cows[6].pos =(glm::vec4(7.0f,-0.5f,2.0f, 1.0f));
     /*cows[0].model = Matrix_Translate(cows[0].pos.x, cows[0].pos.y, cows[0].pos.z);
     cows[1].model = Matrix_Translate(cows[1].pos.x, cows[1].pos.y, cows[1].pos.z);
     cows[2].model = Matrix_Translate(cows[2].pos.x, cows[2].pos.y, cows[2].pos.z);
@@ -580,11 +581,11 @@ void DrawCow(int i){
     cows[i].model = Matrix_Translate(cows[i].pos.x, cows[i].pos.y, cows[i].pos.z);
     glUniformMatrix4fv(model_uniform, 1 , GL_FALSE , glm::value_ptr(cows[i].model));
     if(cows[i].alive){
-        glUniform1i(object_id_uniform, 3); //3 é o npumero da vaca
+        glUniform1i(object_id_uniform, 3); //3 é o nÚmero da vaca
         DrawVirtualObject("cow");
     }
     else{
-        glUniform1i(object_id_uniform, 5); //3 é o npumero da vaca
+        glUniform1i(object_id_uniform, 5); //5 É O NÚMERO DO SANGUE
         DrawVirtualObject("pool");
     }
 }
@@ -613,6 +614,21 @@ int AllCowShip_collision(){
             return i;
         }
     }
+    return -1;
+}
+
+//Função que retorna o índice da primeira vaca dentro do circulo de iluminação da nave. -1 caso nenhuma
+int CowCrossHair(){
+    int i;
+
+    glm::vec4 cow_to_ship;
+    for(i=0; i < NUM_COWS; i++){
+        cow_to_ship = cows[i].pos - ship_position;
+        if(dotproduct(cow_to_ship/norm(cow_to_ship), -camera_up_vector) >= cos(ALPHA)){
+            return i;
+        }
+    }
+
     return -1;
 }
 
@@ -1348,13 +1364,17 @@ void KeyCallback(GLFWwindow* window, int key, int scancode, int action, int mod)
     // Se o usuário apertar a tecla espaço, resetamos os ângulos de Euler para zero.
     if (key == GLFW_KEY_SPACE && action == GLFW_PRESS)
     {
-        g_AngleX = 0.0f;
+        /*g_AngleX = 0.0f;
         g_AngleY = 0.0f;
         g_AngleZ = 0.0f;
         g_ForearmAngleX = 0.0f;
         g_ForearmAngleZ = 0.0f;
         g_TorsoPositionX = 0.0f;
-        g_TorsoPositionY = 0.0f;
+        g_TorsoPositionY = 0.0f;*/
+        int c2 = CowCrossHair();
+        if( c2 !=-1){
+            printf("%d ", c2);
+        }
     }
 
 
