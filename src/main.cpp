@@ -136,6 +136,7 @@ struct GameCow
     glm::vec4 pos = glm::vec4(0.0f,0.0f,0.0f, 1.0f); //cow position
     glm::mat4 model = Matrix_Identity() * Matrix_Translate(pos.x, pos.y, pos.z);
     bool alive = true; //if cow is alive
+    bool abducted = false;
 };
 
 void DrawCow(int i);
@@ -585,9 +586,12 @@ void DrawCow(int i){
         glUniform1i(object_id_uniform, 3); //3 é o nÚmero da vaca
         DrawVirtualObject("cow");
     }
-    else if (cows[i].pos.y = 0.0f) {
+    else if (cows[i].pos.y == -1.0f){
         glUniform1i(object_id_uniform, 5); //5 É O NÚMERO DO SANGUE
         DrawVirtualObject("pool");
+    }
+    else {
+        cows[i].abducted = true;
     }
 }
 
@@ -616,6 +620,21 @@ int AllCowShip_collision(){
         }
     }
     return -1;
+}
+
+bool CowShip_collision(int i){
+    glm::vec4 shipW_min = ship_model * shipM_min;
+    glm::vec4 shipW_max = ship_model * shipM_max;
+
+    glm::vec4 cowW_min;
+    glm::vec4 cowW_max;
+
+    cowW_min = cows[i].model * cowM_min;
+    cowW_max = cows[i].model * cowM_max;
+    if(Bbox_collision(cowW_min, cowW_max, shipW_min,shipW_max)){
+            return true;
+    }
+    return false;
 }
 
 //Função que retorna o índice da primeira vaca dentro do circulo de iluminação da nave. -1 caso nenhuma
@@ -1141,12 +1160,21 @@ GLuint CreateGpuProgram(GLuint vertex_shader_id, GLuint fragment_shader_id)
 
 void AbductCow(){
     int index;
+    int t0 = glfwGetTime();
+    int t1;
+    int t;
     index = CowCrossHair();
     if (index != -1){
-
-            cows[index].pos.y += 0.5;
+        while (!cows[index].abducted){
+            t1 = glfwGetTime();
+            t = t1 - t0;
+            t0 = t1;
+            cows[index].pos.y += 0.5*t;
+            bool abducted = CowShip_collision(index);
+            if (abducted)
+                cows[index].alive = false;
             DrawCow(index);
-
+        }
     }
 }
 
