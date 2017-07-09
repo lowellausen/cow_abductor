@@ -217,6 +217,11 @@ bool probe_on = false;
 
 
 #define NUM_COWS 40    //vetor de vacas
+int freeCows = NUM_COWS;
+int abductedCows = 0;
+int murderedCows = 0;
+int safeCows = 0;
+
 GameCow cows[NUM_COWS];
 
 //model global por perfomance
@@ -623,7 +628,7 @@ int main(int argc, char* argv[])
 
         // Imprimimos na tela os ângulos de Euler que controlam a rotação do
         // terceiro cubo.
-        //TextRendering_ShowEulerAngles(window);
+        TextRendering_ShowEulerAngles(window);
 
         // Imprimimos na informação sobre a matriz de projeção sendo utilizada.
         //TextRendering_ShowProjection(window);
@@ -648,6 +653,10 @@ int main(int argc, char* argv[])
 
     // Finalizamos os recursos do sistema operacional
     glfwTerminate();
+    printf("abducted:  %d", abductedCows);
+    printf("murdered:  %d", murderedCows);
+    printf("safe:  %d", safeCows);
+    printf("totalCows:  %d",  freeCows - abductedCows - murderedCows - safeCows);
 
     // Fim do programa
     return 0;
@@ -696,14 +705,17 @@ int AllCowShip_collision(){
     return -1;
 }
 
+
 void MoveCow(){
     int i;
     for (i = 0; i < NUM_COWS; i++){
         if (cows[i].abducted == 0 && !cows[i].safe && cows[i].alive){
             cows[i].pos.x += cows[i].direction.x/1.5;
             cows[i].pos.z += cows[i].direction.z/1.5;
-            if (CowOnBarn(i))
+            if (CowOnBarn(i)){
                 cows[i].safe = true;
+                safeCows++;
+            }
         }
     }
 }
@@ -1335,6 +1347,7 @@ void Maintain_abduction(){
         cows[cow_abducted].abducted = 2;
         under_abduction = false;
         cow_abducted = -1;
+        abductedCows++;
     }
 }
 
@@ -1559,6 +1572,7 @@ void KeyCallback(GLFWwindow* window, int key, int scancode, int action, int mod)
         int c = AllCowShip_collision();
         if(c!=-1){
                 cows[c].alive = false;
+                murderedCows++;
                 if (cows[c].pos.y == -0.5f){
                     cows[c].pos.y -= 0.5f;
                 }
@@ -1608,6 +1622,7 @@ void KeyCallback(GLFWwindow* window, int key, int scancode, int action, int mod)
         if(c!=-1){
             if((c>=0) && (c<NUM_COWS)){
                 cows[c].alive = false;
+                murderedCows++;
                 if (cows[c].pos.y == -0.5f){
                     cows[c].pos.y -= 0.5f;
                 }
@@ -1719,8 +1734,12 @@ void TextRendering_ShowEulerAngles(GLFWwindow* window)
 
     float pad = TextRendering_LineHeight(window);
 
-    char buffer[80];
-    snprintf(buffer, 80, "Euler Angles rotation matrix = Z(%.2f)*Y(%.2f)*X(%.2f)\n", g_AngleZ, g_AngleY, g_AngleX);
+    float lineheight = TextRendering_LineHeight(window);
+    float charwidth = TextRendering_CharWidth(window);
+
+
+    char buffer[51];
+    snprintf(buffer, 51, "Murdered:  %d   Abducted:  %d   Safe:  %d   Free:  %d", murderedCows, abductedCows, safeCows, freeCows- safeCows - murderedCows - abductedCows);
 
     TextRendering_PrintString(window, buffer, -1.0f+pad/10, -1.0f+2*pad/10, 1.0f);
 }
