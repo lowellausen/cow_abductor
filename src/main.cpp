@@ -421,12 +421,13 @@ int main(int argc, char* argv[])
 
     }
 
-    glm::vec4 cow_lookat = glm::vec4(0.0f,0.0f,1.0f,0.0f);
+    glm::vec4 cow_lookat = glm::vec4(1.0f,0.0f,0.0f,0.0f);
     float cosa = 0;
+    glm::vec4 cow_y = glm::vec4(0.0f, 0.5f,0.0f, 0.0f);
     for(int i=0; i<NUM_COWS;i++){
-        cows[i].direction = normalize(barn_position - cows[i].pos);
+        cows[i].direction = normalize(barn_position - (cows[i].pos - cow_y));
         cosa = dot(cow_lookat, cows[i].direction);   //tentativa de virar as vacas para o celeiro
-        cows[i].angle = acos(cosa);
+        cows[i].angle = (cows[i].pos.z <=0)? -acos(cosa): acos(cosa);
     }
 
     double t0 = glfwGetTime();
@@ -654,7 +655,7 @@ int main(int argc, char* argv[])
 void DrawCow(int i){
     // Desenhamos  vaca
     //model = Matrix_Scale(10.0f, 1.0f, 10.0f);
-    cows[i].model = Matrix_Translate(cows[i].pos.x, cows[i].pos.y, cows[i].pos.z);
+    cows[i].model = Matrix_Translate(cows[i].pos.x, cows[i].pos.y, cows[i].pos.z) * Matrix_Rotate_Y(cows[i].angle);
     glUniformMatrix4fv(model_uniform, 1 , GL_FALSE , glm::value_ptr(cows[i].model));
     if(cows[i].alive && !cows[i].safe){
         glUniform1i(object_id_uniform, 3); //3 é o nÚmero da vaca
