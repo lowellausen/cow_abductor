@@ -205,7 +205,7 @@ bool under_abduction = false;
 int cow_abducted = -1;
 bool probe_on = false;
 
-#define NUM_COWS 7    //vetor de vacas
+#define NUM_COWS 40    //vetor de vacas
 GameCow cows[NUM_COWS];
 
 //model global por perfomance
@@ -389,16 +389,29 @@ int main(int argc, char* argv[])
     glm::mat4 the_model;
     glm::mat4 the_view;
 
+    float randomPosX;
+    float randomPosZ;
+    int negativeZ;
+    int negativeX;
+    float X;
+    float Z;
+    for(int i=0; i<NUM_COWS;i++){
+        randomPosX = rand() % 50;
+        negativeX = rand() % 2;
+        randomPosZ = rand() % 50;
+        negativeZ = rand() % 2;
+        if (negativeX == 0)
+            X = 0 - randomPosX;
+        else
+            X = randomPosX;
 
-    /*for(i=0; i<NUM_COWS;i++){
-    }*/
-    cows[0].pos = glm::vec4(1.0f,-0.5f,-3.0f, 1.0f);
-    cows[1].pos =(glm::vec4(2.0f,-0.5f,5.0f, 1.0f));
-    cows[2].pos =(glm::vec4(-3.0f,-0.5f,9.0f, 1.0f));
-    cows[3].pos =(glm::vec4(4.0f,-0.5f,-7.0f, 1.0f));
-    cows[4].pos =(glm::vec4(5.0f,-0.5f,9.5f, 1.0f));
-    cows[5].pos =(glm::vec4(-6.0f,-0.5f,5.0f, 1.0f));
-    cows[6].pos =(glm::vec4(7.0f,-0.5f,2.0f, 1.0f));
+        if (negativeZ == 0)
+            Z = 0 - randomPosZ;
+        else
+            Z = randomPosZ;
+        cows[i].pos = glm::vec4(X, -0.5f, Z, 1.0f);
+
+    }
 
 
     // Ficamos em loop, renderizando, até que o usuário feche a janela
