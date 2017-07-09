@@ -138,6 +138,7 @@ struct GameCow
     glm::mat4 model = Matrix_Identity() * Matrix_Translate(pos.x, pos.y, pos.z);
     bool alive = true; //if cow is alive
     int abducted = 0;
+    bool safe = false;
 };
 
 void DrawCow(int i);
@@ -146,6 +147,7 @@ bool Bbox_collision(glm::vec4 A_min, glm::vec4 A_max, glm::vec4 B_min, glm::vec4
 int AllCowShip_collision();
 void Maintain_abduction();
 bool AnotherShipInTheWall();
+int CowOnBarn();
 
 
 // Abaixo definimos variáveis globais utilizadas em várias funções do código.
@@ -640,9 +642,6 @@ void DrawCow(int i){
     else if (cows[i].pos.y == -1.0f){
         glUniform1i(object_id_uniform, 5); //5 É O NÚMERO DO SANGUE
         DrawVirtualObject("pool");
-    }
-    else {
-        cows[i].abducted = true;
     }
 }
 
@@ -1295,6 +1294,23 @@ void Maintain_abduction(){
         under_abduction = false;
         cow_abducted = -1;
     }
+}
+
+//Função que retorna se alguma vaca chegou no celeiro
+int CowOnBarn(){
+    int i;
+    glm::vec4 cowW_min;
+    glm::vec4 cowW_max;
+    for(i=0; i < NUM_COWS; i++){
+        if(!cows[i].alive) continue;
+        cowW_min = cows[i].model * cowM_min;
+        cowW_max = cows[i].model * cowM_max;
+        if(Bbox_collision(cowW_min, cowW_max, barnW_min,barnW_max)){
+            return i;
+        }
+    }
+
+    return -1;
 }
 
 
