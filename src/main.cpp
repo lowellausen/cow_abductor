@@ -209,9 +209,12 @@ glm::vec4 shipM_max;
 glm::vec4 barnW_min;
 glm::vec4 barnW_max;
 glm::mat4 ship_model;
+glm::vec4 probe_min = glm::vec4(-1.0f, -1.0f, -1.0f, 0.0f);
+glm::vec4 probe_max = glm::vec4(1.0f, 1.0f, 1.0f, 0.0f);
 bool under_abduction = false;
 int cow_abducted = -1;
 bool probe_on = false;
+
 
 #define NUM_COWS 40    //vetor de vacas
 GameCow cows[NUM_COWS];
@@ -555,7 +558,6 @@ int main(int argc, char* argv[])
         //ship
         // definimos uma fonte de luz sob a nave
         glUniform4f(ship_light_uniform, ship_position.x, ship_position.y, ship_position.z, 1.0f);
-        ship_model = Matrix_Identity();
         ship_model = Matrix_Translate(ship_position.x, ship_position.y, ship_position.z);
         glUniformMatrix4fv(model_uniform, 1 , GL_FALSE , glm::value_ptr(ship_model));
         glUniform1i(object_id_uniform, SHIP);
@@ -713,11 +715,14 @@ int Probe_collision(){
     glm::vec4 shipW_min = ship_model * shipM_min;
     glm::vec4 shipW_max = ship_model * shipM_max;
 
-    if(Bbox_collision(probe_position, probe_position, shipW_min,shipW_max)){
+    glm::vec4 probeW_min = probe_position + probe_min;
+    glm::vec4 probeW_max = probe_position + probe_max;
+
+    if(Bbox_collision(probeW_min, probeW_max, shipW_min,shipW_max)){
             return NUM_COWS;   //colisão com a nave retorna vacas
     }
 
-    if(Bbox_collision(probe_position, probe_position, barnW_min,barnW_max)){
+    if(Bbox_collision(probeW_min, probeW_max, barnW_min,barnW_max)){
             return NUM_COWS+2;   //colisão com o celeiro retorna vacas+2
     }
 
@@ -729,7 +734,7 @@ int Probe_collision(){
         if(!cows[i].alive) continue;
         cowW_min = cows[i].model * cowM_min;
         cowW_max = cows[i].model * cowM_max;
-        if(Bbox_collision(cowW_min, cowW_max, probe_position,probe_position)){
+        if(Bbox_collision(cowW_min, cowW_max, probeW_min,probeW_max)){
             return i;  //colisão com uma vaca retorna seu índice
         }
     }
@@ -768,8 +773,11 @@ int CowCrossHair(){
 
 //Função que intersecta a nave com as paredes
 bool AnotherShipInTheWall(){
+    glm::vec4 shipW_min = ship_model * shipM_min;
+    glm::vec4 shipW_max = ship_model * shipM_max;
     return((ship_position.x <= -GROUND_SIZE + WALL_DIST) || (ship_position.x >= GROUND_SIZE - WALL_DIST)
-           || (ship_position.z <= -GROUND_SIZE + WALL_DIST) || (ship_position.z >= GROUND_SIZE - WALL_DIST));
+           || (ship_position.z <= -GROUND_SIZE + WALL_DIST) || (ship_position.z >= GROUND_SIZE - WALL_DIST)
+            || Bbox_collision(shipW_min, shipW_max, barnW_min, barnW_max));
 }
 
 // Função que carrega uma imagem para ser utilizada como textura
@@ -1528,6 +1536,10 @@ void KeyCallback(GLFWwindow* window, int key, int scancode, int action, int mod)
         //g_AngleX += (mod & GLFW_MOD_SHIFT) ? -delta : delta;
         if (ship_position.y <= -0.5) return;
         ship_position.y -= 0.1f;
+        ship_model = Matrix_Translate(ship_position.x, ship_position.y, ship_position.z);
+        if(AnotherShipInTheWall()){
+            ship_position.y += 0.2f;
+        }
     }
 
     if (key == GLFW_KEY_Y && action == GLFW_PRESS)
@@ -1556,6 +1568,7 @@ void KeyCallback(GLFWwindow* window, int key, int scancode, int action, int mod)
             glm::vec4 step = INC* camera_lookat_l;
             ship_position -= step;
             ship_position.y += step.y;
+            ship_model = Matrix_Translate(ship_position.x, ship_position.y, ship_position.z);
             if(AnotherShipInTheWall()){  //caso a alteração anterior gere uma colisão, desfazemos ela
                 ship_position += step;
                 ship_position.y -= step.y;
@@ -1566,6 +1579,7 @@ void KeyCallback(GLFWwindow* window, int key, int scancode, int action, int mod)
             glm::vec4 step = INC* camera_lookat_l;
             ship_position += step;
             ship_position.y -= step.y;
+            ship_model = Matrix_Translate(ship_position.x, ship_position.y, ship_position.z);
             if(AnotherShipInTheWall()){  //caso a alteração anterior gere uma colisão, desfazemos ela
                 ship_position -= step;
                 ship_position.y += step.y;
@@ -1575,6 +1589,7 @@ void KeyCallback(GLFWwindow* window, int key, int scancode, int action, int mod)
         {
             glm::vec4 step = INC* crossproduct(camera_lookat_l,camera_up_vector);
             ship_position += step;
+            ship_model = Matrix_Translate(ship_position.x, ship_position.y, ship_position.z);
             if(AnotherShipInTheWall()){  //caso a alteração anterior gere uma colisão, desfazemos ela
                 ship_position -= step;
             }
@@ -1583,6 +1598,7 @@ void KeyCallback(GLFWwindow* window, int key, int scancode, int action, int mod)
         {
             glm::vec4 step = INC* crossproduct(camera_lookat_l,camera_up_vector);
             ship_position -= step;
+            ship_model = Matrix_Translate(ship_position.x, ship_position.y, ship_position.z);
             if(AnotherShipInTheWall()){  //caso a alteração anterior gere uma colisão, desfazemos ela
                 ship_position += step;
             }
@@ -1590,6 +1606,12 @@ void KeyCallback(GLFWwindow* window, int key, int scancode, int action, int mod)
     }else{
         int c = Probe_collision();
         if(c!=-1){
+            if((c>=0) && (c<NUM_COWS)){
+                cows[c].alive = false;
+                if (cows[c].pos.y == -0.5f){
+                    cows[c].pos.y -= 0.5f;
+                }
+            }
             probe_position = glm::vec4(2.0f,0.0f,0.0f,0.0f) + ship_position; //if crash to a cow come back to ship
         }
         if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
