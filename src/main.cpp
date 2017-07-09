@@ -147,7 +147,7 @@ bool Bbox_collision(glm::vec4 A_min, glm::vec4 A_max, glm::vec4 B_min, glm::vec4
 int AllCowShip_collision();
 void Maintain_abduction();
 bool AnotherShipInTheWall();
-int CowOnBarn();
+bool CowOnBarn(int i);
 void MoveCow();
 
 
@@ -211,7 +211,7 @@ bool under_abduction = false;
 int cow_abducted = -1;
 bool probe_on = false;
 
-#define NUM_COWS 100    //vetor de vacas
+#define NUM_COWS 40    //vetor de vacas
 GameCow cows[NUM_COWS];
 
 //model global por perfomance
@@ -645,7 +645,7 @@ void DrawCow(int i){
     //model = Matrix_Scale(10.0f, 1.0f, 10.0f);
     cows[i].model = Matrix_Translate(cows[i].pos.x, cows[i].pos.y, cows[i].pos.z);
     glUniformMatrix4fv(model_uniform, 1 , GL_FALSE , glm::value_ptr(cows[i].model));
-    if(cows[i].alive){
+    if(cows[i].alive && !cows[i].safe){
         glUniform1i(object_id_uniform, 3); //3 é o nÚmero da vaca
         DrawVirtualObject("cow");
     }
@@ -686,10 +686,13 @@ void MoveCow(){
     int i;
     glm::vec4 direction;
     for (i = 0; i < NUM_COWS; i++){
-        if (cows[i].abducted == 0)
+        if (cows[i].abducted == 0 && !cows[i].safe){
             direction = normalize(barn_position - cows[i].pos);
-            cows[i].pos.x += direction.x/2;
-            cows[i].pos.z += direction.z/2;
+            cows[i].pos.x += direction.x/1.5;
+            cows[i].pos.z += direction.z/1.5;
+            if (CowOnBarn(i))
+                cows[i].safe = true;
+        }
     }
 }
 
@@ -1318,20 +1321,15 @@ void Maintain_abduction(){
 }
 
 //Função que retorna se alguma vaca chegou no celeiro
-int CowOnBarn(){
-    int i;
+bool CowOnBarn(int i){
     glm::vec4 cowW_min;
     glm::vec4 cowW_max;
-    for(i=0; i < NUM_COWS; i++){
-        if(!cows[i].alive) continue;
-        cowW_min = cows[i].model * cowM_min;
-        cowW_max = cows[i].model * cowM_max;
-        if(Bbox_collision(cowW_min, cowW_max, barnW_min,barnW_max)){
-            return i;
-        }
+    cowW_min = cows[i].model * cowM_min;
+    cowW_max = cows[i].model * cowM_max;
+    if(Bbox_collision(cowW_min, cowW_max, barnW_min,barnW_max)){
+        return true;
     }
-
-    return -1;
+    return false;
 }
 
 
