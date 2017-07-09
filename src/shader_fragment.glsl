@@ -168,14 +168,14 @@ void main()
     {
         // Coordenadas de textura do plano,i
         // obtidas do arquivo OBJ.
-        //U = texcoords.x;
-        //V = texcoords.y;
+        U = texcoords.x;
+        V = texcoords.y;
 
 
-        U = position_model.z;  // MIRRORED_REPEAT NOT 10/10
-        V = position_model.x;
+       // U = position_model.z;  // MIRRORED_REPEAT NOT 10/10
+        //V = position_model.x;
 
-        if(U>=1.0f){
+        /*if(U>=1.0f){
             U = (U - floor(U));
         }
         if(U<=0.0f){
@@ -185,7 +185,7 @@ void main()
         if(V<=0.0f){
             V = -1.0f * V;
             V = 1 - (V - floor(V));
-        }
+        }*/
 
     }
     else if ( object_id == SHIP )
