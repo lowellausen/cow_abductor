@@ -148,6 +148,7 @@ int AllCowShip_collision();
 void Maintain_abduction();
 bool AnotherShipInTheWall();
 int CowOnBarn();
+void MoveCow();
 
 
 // Abaixo definimos variáveis globais utilizadas em várias funções do código.
@@ -210,7 +211,7 @@ bool under_abduction = false;
 int cow_abducted = -1;
 bool probe_on = false;
 
-#define NUM_COWS 40    //vetor de vacas
+#define NUM_COWS 100    //vetor de vacas
 GameCow cows[NUM_COWS];
 
 //model global por perfomance
@@ -401,9 +402,9 @@ int main(int argc, char* argv[])
     float X;
     float Z;
     for(int i=0; i<NUM_COWS;i++){
-        randomPosX = rand() % 50;
+        randomPosX = rand() % 100 + 1;
         negativeX = rand() % 2;
-        randomPosZ = rand() % 50;
+        randomPosZ = rand() % 100 + 1;
         negativeZ = rand() % 2;
         if (negativeX == 0)
             X = 0 - randomPosX;
@@ -417,7 +418,9 @@ int main(int argc, char* argv[])
         cows[i].pos = glm::vec4(X, -0.5f, Z, 1.0f);
 
     }
-
+    double t0 = glfwGetTime();
+    double t1;
+    double t;
 
     // Ficamos em loop, renderizando, até que o usuário feche a janela
     while (!glfwWindowShouldClose(window))
@@ -588,6 +591,13 @@ int main(int argc, char* argv[])
             DrawCow(i);
         }
 
+        t1 = glfwGetTime();
+        t = t1 - t0;
+        if (t > 0.3){
+            MoveCow();
+            t0 = t1;
+        }
+
 
 
         // Pegamos um vértice com coordenadas de modelo (0.5, 0.5, 0.5, 1) e o
@@ -670,6 +680,17 @@ int AllCowShip_collision(){
         }
     }
     return -1;
+}
+
+void MoveCow(){
+    int i;
+    glm::vec4 direction;
+    for (i = 0; i < NUM_COWS; i++){
+        if (cows[i].abducted == 0)
+            direction = normalize(barn_position - cows[i].pos);
+            cows[i].pos.x += direction.x/2;
+            cows[i].pos.z += direction.z/2;
+    }
 }
 
 //Função que retorna se a probe colidiu em algum objeto
