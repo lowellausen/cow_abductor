@@ -136,6 +136,8 @@ struct GameCow
 {
     glm::vec4 pos = glm::vec4(0.0f,0.0f,0.0f, 1.0f); //cow position
     glm::mat4 model = Matrix_Identity() * Matrix_Translate(pos.x, pos.y, pos.z);
+    glm::vec4 direction;
+    float angle = 0; //angulo da direção da vaca
     bool alive = true; //if cow is alive
     int abducted = 0;
     bool safe = false;
@@ -418,6 +420,15 @@ int main(int argc, char* argv[])
         cows[i].pos = glm::vec4(X, -0.5f, Z, 1.0f);
 
     }
+
+    glm::vec4 cow_lookat = glm::vec4(0.0f,0.0f,1.0f,0.0f);
+    float cosa = 0;
+    for(int i=0; i<NUM_COWS;i++){
+        cows[i].direction = normalize(barn_position - cows[i].pos);
+        cosa = dot(cow_lookat, cows[i].direction);   //tentativa de virar as vacas para o celeiro
+        cows[i].angle = acos(cosa);
+    }
+
     double t0 = glfwGetTime();
     double t1;
     double t;
@@ -684,12 +695,10 @@ int AllCowShip_collision(){
 
 void MoveCow(){
     int i;
-    glm::vec4 direction;
     for (i = 0; i < NUM_COWS; i++){
-        if (cows[i].abducted == 0 && !cows[i].safe){
-            direction = normalize(barn_position - cows[i].pos);
-            cows[i].pos.x += direction.x/1.5;
-            cows[i].pos.z += direction.z/1.5;
+        if (cows[i].abducted == 0 && !cows[i].safe && cows[i].alive){
+            cows[i].pos.x += cows[i].direction.x/1.5;
+            cows[i].pos.z += cows[i].direction.z/1.5;
             if (CowOnBarn(i))
                 cows[i].safe = true;
         }
