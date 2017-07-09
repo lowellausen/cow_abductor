@@ -188,6 +188,8 @@ glm::vec4 ship_position      = glm::vec4(1.0f,2.5f,0.0f,1.0f);
 glm::vec4 camera_lookat_l    = glm::vec4(0.0f,0.0f,g_CameraDistance,0.0f);
 //glm::vec4 camera_position_c  = glm::vec4(0.0f,4.0f,-2.0f,0.0f);
 glm::vec4 camera_position_c  = camera_lookat_l + ship_position;
+glm::vec4 probe_position = glm::vec4(3.0f, 0.0f, 0.0f, 0.0f) + ship_position;
+glm::vec4 probe_lookat = glm::vec4(0.0f,0.0f, 1.0f, 0.0f);
 
 //mais variáveis globais que vão ser úteis
 glm::vec4 cowM_min;
@@ -197,6 +199,7 @@ glm::vec4 shipM_max;
 glm::mat4 ship_model;
 bool under_abduction = false;
 int cow_abducted = -1;
+bool probe_on = false;
 
 #define NUM_COWS 7    //vetor de vacas
 GameCow cows[NUM_COWS];
@@ -415,23 +418,31 @@ int main(int argc, char* argv[])
         // variáveis g_CameraDistance, g_CameraPhi, e g_CameraTheta são
         // controladas pelo mouse do usuário. Veja as funções CursorPosCallback()
         // e ScrollCallback().
-        camera_lookat_l.y = g_CameraDistance * sin(g_CameraPhi);
-        camera_lookat_l.z = g_CameraDistance * cos(g_CameraPhi)*cos(g_CameraTheta);
-        camera_lookat_l.x = g_CameraDistance * cos(g_CameraPhi)*sin(g_CameraTheta);
+        if(!probe_on){
+            camera_lookat_l.y = g_CameraDistance * sin(g_CameraPhi);
+            camera_lookat_l.z = g_CameraDistance * cos(g_CameraPhi)*cos(g_CameraTheta);
+            camera_lookat_l.x = g_CameraDistance * cos(g_CameraPhi)*sin(g_CameraTheta);
 
-        camera_position_c = ship_position + camera_lookat_l;
+            camera_position_c = ship_position + camera_lookat_l;
 
-        camera_lookat_l = camera_lookat_l/norm(camera_lookat_l);
+            camera_lookat_l = camera_lookat_l/norm(camera_lookat_l);
+        }else{
+            probe_lookat.y = sin(g_CameraPhi);
+            probe_lookat.z = cos(g_CameraPhi)*cos(g_CameraTheta);
+            probe_lookat.x = cos(g_CameraPhi)*sin(g_CameraTheta);
+
+            //probe_lookat = probe_lookat/norm(probe_lookat);
+        }
 
         // Abaixo definimos as varáveis que efetivamente definem a câmera virtual.
         // Veja slide 159 do documento "Aula_08_Sistemas_de_Coordenadas.pdf".
-        glm::vec4 camera_view_vector = -camera_lookat_l; // Vetor "view", sentido para onde a câmera está virada
+            glm::vec4 camera_view_vector = (probe_on)? -probe_lookat:-camera_lookat_l; // Vetor "view", sentido para onde a câmera está virada
 
 
         // Computamos a matriz "View" utilizando os parâmetros da câmera para
         // definir o sistema de coordenadas da câmera.  Veja slide 162 do
         // documento "Aula_08_Sistemas_de_Coordenadas.pdf".
-        glm::mat4 view = Matrix_Camera_View(camera_position_c, camera_view_vector, camera_up_vector);
+        glm::mat4 view = Matrix_Camera_View((probe_on)? probe_position:camera_position_c, camera_view_vector, camera_up_vector);
 
         // Agora computamos a matriz de Projeção.
         glm::mat4 projection;
@@ -624,6 +635,32 @@ int AllCowShip_collision(){
         cowW_max = cows[i].model * cowM_max;
         if(Bbox_collision(cowW_min, cowW_max, shipW_min,shipW_max)){
             return i;
+        }
+    }
+    return -1;
+}
+
+//Função que retorna se a probe colidiu em algum objeto
+int Probe_collision(){
+    int i;
+
+    glm::vec4 shipW_min = ship_model * shipM_min;
+    glm::vec4 shipW_max = ship_model * shipM_max;
+
+    if(Bbox_collision(probe_position, probe_position, shipW_min,shipW_max)){
+            return NUM_COWS;   //colisão com a nave retorna vacas
+    }
+
+    if(probe_position.y <= -1.0) return NUM_COWS +1; //colisão com o chão retorna vacas +1
+
+    glm::vec4 cowW_min;
+    glm::vec4 cowW_max;
+    for(i=0; i < NUM_COWS; i++){
+        if(!cows[i].alive) continue;
+        cowW_min = cows[i].model * cowM_min;
+        cowW_max = cows[i].model * cowM_max;
+        if(Bbox_collision(cowW_min, cowW_max, probe_position,probe_position)){
+            return i;  //colisão com uma vaca retorna seu índice
         }
     }
     return -1;
@@ -1416,33 +1453,56 @@ void KeyCallback(GLFWwindow* window, int key, int scancode, int action, int mod)
         ship_position.y += 0.1f;
     }
 
-    int c = AllCowShip_collision();
-    if(c!=-1){
-            cows[c].alive = false;
-            if (cows[c].pos.y == -0.5f){
-                cows[c].pos.y -= 0.5f;
-            }
-    }
 
-    if(!under_abduction){
-    if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
-    {
-        ship_position -= INC* camera_lookat_l;
-        ship_position.y += INC* camera_lookat_l.y;
-    }
-    if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
-    {
-        ship_position += INC* camera_lookat_l;
-        ship_position.y -= INC* camera_lookat_l.y;
-    }
-    if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS)
-    {
-        ship_position += INC* crossproduct(camera_lookat_l,camera_up_vector);
-    }                                       // A e D andam em direção a um vetor que aponta para o lado da câmera
-    if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
-    {
-        ship_position -= INC* crossproduct(camera_lookat_l,camera_up_vector);
-    }
+
+    if(!probe_on){
+        int c = AllCowShip_collision();
+        if(c!=-1){
+                cows[c].alive = false;
+                if (cows[c].pos.y == -0.5f){
+                    cows[c].pos.y -= 0.5f;
+                }
+        }
+        if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
+        {
+            ship_position -= INC* camera_lookat_l;
+            ship_position.y += INC* camera_lookat_l.y;
+        }
+        if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
+        {
+            ship_position += INC* camera_lookat_l;
+            ship_position.y -= INC* camera_lookat_l.y;
+        }
+        if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS)
+        {
+            ship_position += INC* crossproduct(camera_lookat_l,camera_up_vector);
+        }                                       // A e D andam em direção a um vetor que aponta para o lado da câmera
+        if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
+        {
+            ship_position -= INC* crossproduct(camera_lookat_l,camera_up_vector);
+        }
+    }else{
+        int c = Probe_collision();
+        if(c!=-1){
+            probe_position = glm::vec4(2.0f,0.0f,0.0f,0.0f) + ship_position; //if crash to a cow come back to ship
+        }
+        if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
+        {
+            probe_position -= INC* probe_lookat;
+        }
+        if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
+        {
+            probe_position += INC* probe_lookat;
+        }
+        if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS)
+        {
+            probe_position += INC* crossproduct(probe_lookat,camera_up_vector);
+        }                                       // A e D andam em direção a um vetor que aponta para o lado da câmera
+        if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
+        {
+            probe_position -= INC* crossproduct(probe_lookat,camera_up_vector);
+        }
+
     }
 
     // Se o usuário apertar a tecla espaço, resetamos os ângulos de Euler para zero.
@@ -1460,13 +1520,15 @@ void KeyCallback(GLFWwindow* window, int key, int scancode, int action, int mod)
     // Se o usuário apertar a tecla P, utilizamos projeção perspectiva.
     if (key == GLFW_KEY_P && action == GLFW_PRESS)
     {
-        g_UsePerspectiveProjection = true;
+        //g_UsePerspectiveProjection = true;
+        probe_on = (probe_on)? false:true;
+        probe_position = glm::vec4(2.0f,0.0f,0.0f,0.0f) + ship_position;
     }
 
     // Se o usuário apertar a tecla O, utilizamos projeção ortográfica.
     if (key == GLFW_KEY_O && action == GLFW_PRESS)
     {
-        g_UsePerspectiveProjection = false;
+        //g_UsePerspectiveProjection = false;
     }
 
     // Se o usuário apertar a tecla H, fazemos um "toggle" do texto informativo mostrado na tela.
