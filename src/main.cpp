@@ -145,6 +145,7 @@ void AbductCow();
 bool Bbox_collision(glm::vec4 A_min, glm::vec4 A_max, glm::vec4 B_min, glm::vec4 B_max);
 int AllCowShip_collision();
 void Maintain_abduction();
+bool AnotherShipInTheWall();
 
 
 // Abaixo definimos variáveis globais utilizadas em várias funções do código.
@@ -168,6 +169,8 @@ float g_AngleZ = 0.0f;
 
 #define INC 0.2f
 #define ALPHA 0.523599
+#define GROUND_SIZE 100.0f
+#define WALL_DIST 10.0f //o quão longe do precipício a nave vai
 
 // "g_LeftMouseButtonPressed = true" se o usuário está com o botão esquerdo do mouse
 // pressionado no momento atual. Veja função MouseButtonCallback().
@@ -541,7 +544,6 @@ int main(int argc, char* argv[])
 
         // BUNNY UP HERE!!!!!
 
-        #define GROUND_SIZE 100.0f
         // Desenhamos o plano do chão
         model = Matrix_Scale(GROUND_SIZE, 1.0f, GROUND_SIZE);
         model = model * Matrix_Translate(0.0f,-1.1f,0.0f);
@@ -716,6 +718,12 @@ int CowCrossHair(){
     }
 
     return -1;
+}
+
+//Função que intersecta a nave com as paredes
+bool AnotherShipInTheWall(){
+    return((ship_position.x <= -GROUND_SIZE + WALL_DIST) || (ship_position.x >= GROUND_SIZE - WALL_DIST)
+           || (ship_position.z <= -GROUND_SIZE + WALL_DIST) || (ship_position.z >= GROUND_SIZE - WALL_DIST));
 }
 
 // Função que carrega uma imagem para ser utilizada como textura
@@ -1487,21 +1495,39 @@ void KeyCallback(GLFWwindow* window, int key, int scancode, int action, int mod)
         }
         if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
         {
-            ship_position -= INC* camera_lookat_l;
-            ship_position.y += INC* camera_lookat_l.y;
+            glm::vec4 step = INC* camera_lookat_l;
+            ship_position -= step;
+            ship_position.y += step.y;
+            if(AnotherShipInTheWall()){  //caso a alteração anterior gere uma colisão, desfazemos ela
+                ship_position += step;
+                ship_position.y -= step.y;
+            }
         }
         if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
         {
-            ship_position += INC* camera_lookat_l;
-            ship_position.y -= INC* camera_lookat_l.y;
+            glm::vec4 step = INC* camera_lookat_l;
+            ship_position += step;
+            ship_position.y -= step.y;
+            if(AnotherShipInTheWall()){  //caso a alteração anterior gere uma colisão, desfazemos ela
+                ship_position -= step;
+                ship_position.y += step.y;
+            }
         }
         if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS)
         {
-            ship_position += INC* crossproduct(camera_lookat_l,camera_up_vector);
+            glm::vec4 step = INC* crossproduct(camera_lookat_l,camera_up_vector);
+            ship_position += step;
+            if(AnotherShipInTheWall()){  //caso a alteração anterior gere uma colisão, desfazemos ela
+                ship_position -= step;
+            }
         }                                       // A e D andam em direção a um vetor que aponta para o lado da câmera
         if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
         {
-            ship_position -= INC* crossproduct(camera_lookat_l,camera_up_vector);
+            glm::vec4 step = INC* crossproduct(camera_lookat_l,camera_up_vector);
+            ship_position -= step;
+            if(AnotherShipInTheWall()){  //caso a alteração anterior gere uma colisão, desfazemos ela
+                ship_position += step;
+            }
         }
     }else{
         int c = Probe_collision();
