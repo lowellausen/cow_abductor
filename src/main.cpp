@@ -191,12 +191,15 @@ glm::vec4 camera_lookat_l    = glm::vec4(0.0f,0.0f,g_CameraDistance,0.0f);
 glm::vec4 camera_position_c  = camera_lookat_l + ship_position;
 glm::vec4 probe_position = glm::vec4(3.0f, 0.0f, 0.0f, 0.0f) + ship_position;
 glm::vec4 probe_lookat = glm::vec4(0.0f,0.0f, 1.0f, 0.0f);
+glm::vec4 barn_position = glm::vec4(0.0f,-1.0f,0.0f,1.0f);
 
 //mais variáveis globais que vão ser úteis
 glm::vec4 cowM_min;
 glm::vec4 cowM_max;
 glm::vec4 shipM_min;
 glm::vec4 shipM_max;
+glm::vec4 barnW_min;
+glm::vec4 barnW_max;
 glm::mat4 ship_model;
 bool under_abduction = false;
 int cow_abducted = -1;
@@ -308,10 +311,11 @@ int main(int argc, char* argv[])
 
     // Carregamos n imagens para serem utilizadas como textura
     LoadTextureImage("../../data/tc-earth_daymap_surface.jpg");      // TextureImage0
-    LoadTextureImage("../../data/tc-earth_nightmap_citylights.gif"); // TextureImage1
+    LoadTextureImage("../../data/barn.jpg");                        // TextureImage1
     LoadTextureImage("../../data/grass.jpg");                        // TextureImage2
     LoadTextureImage("../../data/cowT.jpg");                          // TextureImage3
     LoadTextureImage("../../data/ufoT.png");                          // TextureImage4
+
 
 
     // Construímos a representação de objetos geométricos através de malhas de triângulos
@@ -339,15 +343,25 @@ int main(int argc, char* argv[])
     ComputeNormals(&poolmodel);
     BuildTrianglesAndAddToVirtualScene(&poolmodel);
 
+    ObjModel barnmodel("../../data/barn.obj");
+    ComputeNormals(&barnmodel);
+    BuildTrianglesAndAddToVirtualScene(&barnmodel);
+
     glm::vec3 cowB_min = g_VirtualScene["cow"].bbox_min; //bbox de modelo das vacas
     glm::vec3 cowB_max = g_VirtualScene["cow"].bbox_max;
     glm::vec3 shipB_min = g_VirtualScene["ship"].bbox_min; //bbox de modelo na nave
     glm::vec3 shipB_max = g_VirtualScene["ship"].bbox_max;
+    glm::vec3 barnB_min = g_VirtualScene["barn"].bbox_min; //bbox ddo modelo do celeiro
+    glm::vec3 barnB_max = g_VirtualScene["barn"].bbox_max;
+
+    glm::mat4 barn_model = Matrix_Translate(barn_position.x, barn_position.y, barn_position.z);
 
     cowM_min = glm::vec4(cowB_min.x, cowB_min.y, cowB_min.z, 1.0f);
     cowM_max = glm::vec4(cowB_max.x, cowB_max.y, cowB_max.z, 1.0f);
     shipM_min = glm::vec4(shipB_min.x, shipB_min.y, shipB_min.z, 1.0f);
     shipM_max = glm::vec4(shipB_max.x, shipB_max.y, shipB_max.z, 1.0f);
+    barnW_min = barn_model * glm::vec4(barnB_min.x, barnB_min.y, barnB_min.z, 1.0f);
+    barnW_max = barn_model * glm::vec4(barnB_max.x, barnB_max.y, barnB_max.z, 1.0f);
 
 
     if ( argc > 1 )
@@ -385,13 +399,6 @@ int main(int argc, char* argv[])
     cows[4].pos =(glm::vec4(5.0f,-0.5f,9.5f, 1.0f));
     cows[5].pos =(glm::vec4(-6.0f,-0.5f,5.0f, 1.0f));
     cows[6].pos =(glm::vec4(7.0f,-0.5f,2.0f, 1.0f));
-    /*cows[0].model = Matrix_Translate(cows[0].pos.x, cows[0].pos.y, cows[0].pos.z);
-    cows[1].model = Matrix_Translate(cows[1].pos.x, cows[1].pos.y, cows[1].pos.z);
-    cows[2].model = Matrix_Translate(cows[2].pos.x, cows[2].pos.y, cows[2].pos.z);
-    cows[3].model = Matrix_Translate(cows[3].pos.x, cows[3].pos.y, cows[3].pos.z);
-    cows[4].model = Matrix_Translate(cows[4].pos.x, cows[4].pos.y, cows[4].pos.z);
-    cows[5].model = Matrix_Translate(cows[5].pos.x, cows[5].pos.y, cows[5].pos.z);
-    cows[6].model = Matrix_Translate(cows[6].pos.x, cows[6].pos.y, cows[6].pos.z);*/
 
 
     // Ficamos em loop, renderizando, até que o usuário feche a janela
@@ -490,13 +497,18 @@ int main(int argc, char* argv[])
         #define COW    3
         #define SHIP   4
         #define POOL   5
+        #define BARN   6
 
         // Desenhamos o modelo da esfera
         // DESATIVANDO CULLING PARA PODER VER DENTRO DA ESFERA!! "ENVIRONMENT MAPPING"
         glDisable(GL_CULL_FACE);
 
         #define SKY_SIZE 50.0
-        model = Matrix_Translate(camera_position_c.x, camera_position_c.y, camera_position_c.z);
+        if (!probe_on){
+            model = Matrix_Translate(camera_position_c.x, camera_position_c.y, camera_position_c.z);
+        }else{
+            model = Matrix_Translate(probe_position.x, probe_position.y, probe_position.z);
+        }
         model = model * Matrix_Scale(SKY_SIZE, SKY_SIZE, SKY_SIZE);
         /*model = model
               * Matrix_Rotate_Z(0.6f)
@@ -510,7 +522,6 @@ int main(int argc, char* argv[])
         //ship
         // definimos uma fonte de luz sob a nave
         glUniform4f(ship_light_uniform, ship_position.x, ship_position.y, ship_position.z, 1.0f);
-
         ship_model = Matrix_Identity();
         ship_model = Matrix_Translate(ship_position.x, ship_position.y, ship_position.z);
         glUniformMatrix4fv(model_uniform, 1 , GL_FALSE , glm::value_ptr(ship_model));
@@ -536,6 +547,11 @@ int main(int argc, char* argv[])
         glUniformMatrix4fv(model_uniform, 1 , GL_FALSE , glm::value_ptr(model));
         glUniform1i(object_id_uniform, PLANE);
         DrawVirtualObject("plane");
+
+        //desenhamos o celeiro
+        glUniformMatrix4fv(model_uniform, 1 , GL_FALSE , glm::value_ptr(barn_model));
+        glUniform1i(object_id_uniform, BARN);
+        DrawVirtualObject("barn");
 
         // Desenhamos  vaca
         //model = Matrix_Scale(10.0f, 1.0f, 10.0f);
@@ -650,6 +666,10 @@ int Probe_collision(){
 
     if(Bbox_collision(probe_position, probe_position, shipW_min,shipW_max)){
             return NUM_COWS;   //colisão com a nave retorna vacas
+    }
+
+    if(Bbox_collision(probe_position, probe_position, barnW_min,barnW_max)){
+            return NUM_COWS+2;   //colisão com o celeiro retorna vacas+2
     }
 
     if(probe_position.y <= -1.0) return NUM_COWS +1; //colisão com o chão retorna vacas +1

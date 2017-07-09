@@ -25,6 +25,7 @@ uniform mat4 projection;
 #define COW    3
 #define SHIP   4
 #define POOL   5
+#define BARN   6
 uniform int object_id;
 
 uniform vec4 ship_light;
@@ -122,7 +123,7 @@ void main()
         U = (theta+M_PI)/(2*M_PI);
         V = (phi + M_PI_2)/M_PI;
     }
-    else if ( (object_id == BUNNY) || (object_id == COW) )
+    else if ( (object_id == BUNNY) || (object_id == COW) || (object_id == BARN) )
     {
         // PREENCHA AQUI as coordenadas de textura do coelho, computadas com
         // projeção planar XY em COORDENADAS DO MODELO. Utilize como referência
@@ -213,8 +214,6 @@ void main()
 
     // Obtemos a refletância difusa a partir da leitura da imagem TextureImage0
 
-    //vec3 Kd1 = texture(TextureImage1, vec2(U,V)).rgb;
-
 
     // Equação de Iluminação
     float lambert = max(0,dot(n,l));
@@ -252,6 +251,10 @@ void main()
     if(object_id == POOL){
         color = Kd * light_spectrum * lambert
           + Ks * light_spectrum * (phong+AMBIENT);
+    }
+    if(object_id == BARN){
+        vec3 Kd1 = texture(TextureImage1, vec2(U,V)).rgb;
+        color = Kd1 * (lambert + AMBIENT);
     }
 
     // Cor final com correção gamma, considerando monitor sRGB.
