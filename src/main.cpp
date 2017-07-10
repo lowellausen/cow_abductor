@@ -24,7 +24,7 @@ int main(int argc, char* argv[])
 
     // Criamos uma janela do sistema operacional
     GLFWwindow* window;
-    window = glfwCreateWindow(800, 600, "INF01047", NULL, NULL);
+    window = glfwCreateWindow(800, 600, "Cow Abductor", NULL, NULL);
     if (!window)
     {
         glfwTerminate();
