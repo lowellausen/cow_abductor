@@ -93,6 +93,8 @@ float g_AngleZ = 0.0f;
 #define NUM_COWS 40
 #define ENDGAME 2
 #define GAME 1
+#define SCORE_ABDUCT 32
+#define SCORE_KILL  11
 
 int game = GAME;
 // "g_LeftMouseButtonPressed = true" se o usuário está com o botão esquerdo do mouse
@@ -136,6 +138,7 @@ int freeCows = NUM_COWS;
 int abductedCows = 0;
 int murderedCows = 0;
 int safeCows = 0;
+int score = 0;
 
 GameCow cows[NUM_COWS];
 

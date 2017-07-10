@@ -1112,7 +1112,7 @@
 	<inttypes.h>
 	<stdint.h>
 
-1499644683 source:d:\users\leonardo\documents\cic\fcg\trab\trab_fcg\src\main.cpp
+1499649826 source:d:\users\leonardo\documents\cic\fcg\trab\trab_fcg\src\main.cpp
 	"callbacks.h"
 
 1499603106 d:\users\leonardo\documents\cic\fcg\trab\trab_fcg\include\glfw\glfw3.h
@@ -2724,10 +2724,10 @@
 1499641399 d:\users\leonardo\documents\cic\fcg\trab\trab_fcg\include\others.h
 	"textrendering.h"
 
-1499644022 d:\users\leonardo\documents\cic\fcg\trab\trab_fcg\include\textrendering.h
+1499649952 d:\users\leonardo\documents\cic\fcg\trab\trab_fcg\include\textrendering.h
 	"globals.h"
 
-1499643746 d:\users\leonardo\documents\cic\fcg\trab\trab_fcg\include\globals.h
+1499650152 d:\users\leonardo\documents\cic\fcg\trab\trab_fcg\include\globals.h
 	<glad/glad.h>
 	<GLFW/glfw3.h>
 	<map>

@@ -40,8 +40,9 @@ void TextRendering_ShowScore(GLFWwindow* window)
 
     float pad = TextRendering_LineHeight(window);
 
-    char buffer[51];
-    snprintf(buffer, 51, "M  %d   Abducted:  %d   Safe:  %d   Free:  %d", murderedCows, abductedCows, safeCows, freeCows- safeCows - murderedCows - abductedCows);
+    char buffer[80];
+    snprintf(buffer, 80, "Murdered:  %d   Abducted:  %d   Safe:  %d   Free:  %d   Final Score: %d", murderedCows, abductedCows, safeCows, freeCows- safeCows - murderedCows - abductedCows, score);
+
     TextRendering_PrintString(window, buffer, -1.0f+pad/10, -1.0f+2*pad/10, 1.0f);
 }
 // Escrevemos na tela o número de quadros renderizados por segundo (frames per

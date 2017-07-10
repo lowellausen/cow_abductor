@@ -1,35 +1,5 @@
 #include "callbacks.h"
 
-
-// Estrutura que representa um modelo geométrico carregado a partir de um
-// arquivo ".obj". Veja https://en.wikipedia.org/wiki/Wavefront_.obj_file .
-
-
-
-
-
-
-// Funções callback para comunicação com o sistema operacional e interação do
-// usuário. Veja mais comentários nas definições das mesmas, abaixo.
-
-
-// Definimos uma estrutura que armazenará dados necessários para renderizar
-// cada objeto da cena virtual.
-
-
-
-
-
-// Abaixo definimos variáveis globais utilizadas em várias funções do código.
-
-// A cena virtual é uma lista de objetos nomeados, guardados em um dicionário
-// (map).  Veja dentro da função BuildTrianglesAndAddToVirtualScene() como que são incluídos
-// objetos dentro da variável g_VirtualScene, e veja na função main() como
-// estes são acessados.
-
-
-
-
 int main(int argc, char* argv[])
 {
     // Inicializamos a biblioteca GLFW, utilizada para criar uma janela do
@@ -217,144 +187,162 @@ int main(int argc, char* argv[])
     // Ficamos em loop, renderizando, até que o usuário feche a janela
     while (!glfwWindowShouldClose(window))
     {
-        // Aqui executamos as operações de renderização
+        if(game == GAME){
+            // Aqui executamos as operações de renderização
 
-        // "Pintamos" todos os pixels do framebuffer com a cor definida acima,
-        // e também resetamos todos os pixels do Z-buffer (depth buffer).
-        glClear(GL_DEPTH_BUFFER_BIT);
+            // "Pintamos" todos os pixels do framebuffer com a cor definida acima,
+            // e também resetamos todos os pixels do Z-buffer (depth buffer).
+            glClear(GL_DEPTH_BUFFER_BIT);
 
-        // Pedimos para a GPU utilizar o programa de GPU criado acima (contendo
-        // os shaders de vértice e fragmentos)
-        glUseProgram(program_id);
+            // Pedimos para a GPU utilizar o programa de GPU criado acima (contendo
+            // os shaders de vértice e fragmentos)
+            glUseProgram(program_id);
 
-        // Computamos a posição da câmera utilizando coordenadas esféricas.  As
-        // variáveis g_CameraDistance, g_CameraPhi, e g_CameraTheta são
-        // controladas pelo mouse do usuário. Veja as funções CursorPosCallback()
-        // e ScrollCallback().
-        if(!probe_on){
-            camera_lookat_l.y = g_CameraDistance * sin(g_CameraPhi);
-            camera_lookat_l.z = g_CameraDistance * cos(g_CameraPhi)*cos(g_CameraTheta);
-            camera_lookat_l.x = g_CameraDistance * cos(g_CameraPhi)*sin(g_CameraTheta);
+            // Computamos a posição da câmera utilizando coordenadas esféricas.  As
+            // variáveis g_CameraDistance, g_CameraPhi, e g_CameraTheta são
+            // controladas pelo mouse do usuário. Veja as funções CursorPosCallback()
+            // e ScrollCallback().
+            if(!probe_on){
+                camera_lookat_l.y = g_CameraDistance * sin(g_CameraPhi);
+                camera_lookat_l.z = g_CameraDistance * cos(g_CameraPhi)*cos(g_CameraTheta);
+                camera_lookat_l.x = g_CameraDistance * cos(g_CameraPhi)*sin(g_CameraTheta);
 
-            camera_position_c = ship_position + camera_lookat_l;
+                camera_position_c = ship_position + camera_lookat_l;
 
-            camera_lookat_l = camera_lookat_l/norm(camera_lookat_l);
+                camera_lookat_l = camera_lookat_l/norm(camera_lookat_l);
+            }else{
+                probe_lookat.y = sin(g_CameraPhi);
+                probe_lookat.z = cos(g_CameraPhi)*cos(g_CameraTheta);
+                probe_lookat.x = cos(g_CameraPhi)*sin(g_CameraTheta);
+
+                //probe_lookat = probe_lookat/norm(probe_lookat);
+            }
+
+            // Abaixo definimos as varáveis que efetivamente definem a câmera virtual.
+            // Veja slide 159 do documento "Aula_08_Sistemas_de_Coordenadas.pdf".
+                glm::vec4 camera_view_vector = (probe_on)? -probe_lookat:-camera_lookat_l; // Vetor "view", sentido para onde a câmera está virada
+
+
+            // Computamos a matriz "View" utilizando os parâmetros da câmera para
+            // definir o sistema de coordenadas da câmera.  Veja slide 162 do
+            // documento "Aula_08_Sistemas_de_Coordenadas.pdf".
+            glm::mat4 view = Matrix_Camera_View((probe_on)? probe_position:camera_position_c, camera_view_vector, camera_up_vector);
+
+            // Agora computamos a matriz de Projeção.
+            glm::mat4 projection;
+
+            // Note que, no sistema de coordenadas da câmera, os planos near e far
+            // estão no sentido negativo! Veja slides 180-183 do documento
+            // "Aula_09_Projecoes.pdf".
+            float nearplane = -0.1f;  // Posição do "near plane"
+            float farplane  = -100.0f; // Posição do "far plane"
+
+            float field_of_view = 3.141592 / 3.0f;
+            projection = Matrix_Perspective(field_of_view, g_ScreenRatio, nearplane, farplane);
+
+            model = Matrix_Identity(); // Transformação identidade de modelagem
+
+            // Enviamos as matrizes "view" e "projection" para a placa de vídeo
+            // (GPU). Veja o arquivo "shader_vertex.glsl", onde estas são
+            // efetivamente aplicadas em todos os pontos.
+            glUniformMatrix4fv(view_uniform       , 1 , GL_FALSE , glm::value_ptr(view));
+            glUniformMatrix4fv(projection_uniform , 1 , GL_FALSE , glm::value_ptr(projection));
+
+
+
+            // Desenhamos o modelo da esfera
+            // DESATIVANDO CULLING PARA PODER VER DENTRO DA ESFERA!! "ENVIRONMENT MAPPING"
+            glDisable(GL_CULL_FACE);
+
+
+            if (!probe_on){
+                model = Matrix_Translate(camera_position_c.x, camera_position_c.y, camera_position_c.z);
+            }else{
+                model = Matrix_Translate(probe_position.x, probe_position.y, probe_position.z);
+            }
+            model = model * Matrix_Scale(SKY_SIZE, SKY_SIZE, SKY_SIZE);
+            glUniformMatrix4fv(model_uniform, 1 , GL_FALSE , glm::value_ptr(model));
+            glUniform1i(object_id_uniform, SPHERE);
+            DrawVirtualObject("sphere");
+
+
+            //ship
+            // definimos uma fonte de luz sob a nave
+            glUniform4f(ship_light_uniform, ship_position.x, ship_position.y, ship_position.z, 1.0f);
+            ship_model = Matrix_Translate(ship_position.x, ship_position.y, ship_position.z);
+            glUniformMatrix4fv(model_uniform, 1 , GL_FALSE , glm::value_ptr(ship_model));
+            glUniform1i(object_id_uniform, SHIP);
+            DrawVirtualObject("ship");
+
+            glEnable(GL_CULL_FACE);
+
+
+            // Desenhamos o plano do chão
+            model = Matrix_Scale(GROUND_SIZE, 1.0f, GROUND_SIZE);
+            model = model * Matrix_Translate(0.0f,-1.1f,0.0f);
+            glUniformMatrix4fv(model_uniform, 1 , GL_FALSE , glm::value_ptr(model));
+            glUniform1i(object_id_uniform, PLANE);
+            DrawVirtualObject("plane");
+
+            //desenhamos o celeiro
+            glUniformMatrix4fv(model_uniform, 1 , GL_FALSE , glm::value_ptr(barn_model));
+            glUniform1i(object_id_uniform, BARN);
+            DrawVirtualObject("barn");
+
+            // desenhamos as vacas
+            if(under_abduction){
+                Maintain_abduction();
+            }
+
+            for(int i=0; i<NUM_COWS;i++){
+                DrawCow(i);
+            }
+
+            t1 = glfwGetTime();
+            t = t1 - t0;
+            if (t > 0.3){
+                MoveCow();
+                t0 = t1;
+            }
+
+
+            // Imprimimos na tela os ângulos de Euler que controlam a rotação do
+            // terceiro cubo.
+            TextRendering_ShowInfo(window);
+
+
+            // Imprimimos na tela informação sobre o número de quadros renderizados
+            // por segundo (frames per second).
+            TextRendering_ShowFramesPerSecond(window);
+
+            // O framebuffer onde a OpenGL executa as operações de renderização não
+            // é o mesmo que está sendo mostrado para o usuário, caso contrário
+            // seria possível ver artefatos conhecidos como "screen tearing". A
+            // chamada abaixo faz a troca dos buffers, mostrando para o usuário
+            // tudo que foi renderizado pelas funções acima.
+            glfwSwapBuffers(window);
+
         }else{
-            probe_lookat.y = sin(g_CameraPhi);
-            probe_lookat.z = cos(g_CameraPhi)*cos(g_CameraTheta);
-            probe_lookat.x = cos(g_CameraPhi)*sin(g_CameraTheta);
+            bool will_continue = false;
 
-            //probe_lookat = probe_lookat/norm(probe_lookat);
+            score = abductedCows * SCORE_ABDUCT + murderedCows * SCORE_KILL;
+
+            //printar o score como???
+            TextRendering_ShowScore(window);
+
+            /*if(!will_continue){
+                glfwSetWindowShouldClose(window, GL_TRUE);
+            }*/
         }
 
-        // Abaixo definimos as varáveis que efetivamente definem a câmera virtual.
-        // Veja slide 159 do documento "Aula_08_Sistemas_de_Coordenadas.pdf".
-            glm::vec4 camera_view_vector = (probe_on)? -probe_lookat:-camera_lookat_l; // Vetor "view", sentido para onde a câmera está virada
 
-
-        // Computamos a matriz "View" utilizando os parâmetros da câmera para
-        // definir o sistema de coordenadas da câmera.  Veja slide 162 do
-        // documento "Aula_08_Sistemas_de_Coordenadas.pdf".
-        glm::mat4 view = Matrix_Camera_View((probe_on)? probe_position:camera_position_c, camera_view_vector, camera_up_vector);
-
-        // Agora computamos a matriz de Projeção.
-        glm::mat4 projection;
-
-        // Note que, no sistema de coordenadas da câmera, os planos near e far
-        // estão no sentido negativo! Veja slides 180-183 do documento
-        // "Aula_09_Projecoes.pdf".
-        float nearplane = -0.1f;  // Posição do "near plane"
-        float farplane  = -100.0f; // Posição do "far plane"
-
-        float field_of_view = 3.141592 / 3.0f;
-        projection = Matrix_Perspective(field_of_view, g_ScreenRatio, nearplane, farplane);
-
-        model = Matrix_Identity(); // Transformação identidade de modelagem
-
-        // Enviamos as matrizes "view" e "projection" para a placa de vídeo
-        // (GPU). Veja o arquivo "shader_vertex.glsl", onde estas são
-        // efetivamente aplicadas em todos os pontos.
-        glUniformMatrix4fv(view_uniform       , 1 , GL_FALSE , glm::value_ptr(view));
-        glUniformMatrix4fv(projection_uniform , 1 , GL_FALSE , glm::value_ptr(projection));
-
-
-
-        // Desenhamos o modelo da esfera
-        // DESATIVANDO CULLING PARA PODER VER DENTRO DA ESFERA!! "ENVIRONMENT MAPPING"
-        glDisable(GL_CULL_FACE);
-
-
-        if (!probe_on){
-            model = Matrix_Translate(camera_position_c.x, camera_position_c.y, camera_position_c.z);
-        }else{
-            model = Matrix_Translate(probe_position.x, probe_position.y, probe_position.z);
-        }
-        model = model * Matrix_Scale(SKY_SIZE, SKY_SIZE, SKY_SIZE);
-        glUniformMatrix4fv(model_uniform, 1 , GL_FALSE , glm::value_ptr(model));
-        glUniform1i(object_id_uniform, SPHERE);
-        DrawVirtualObject("sphere");
-
-
-        //ship
-        // definimos uma fonte de luz sob a nave
-        glUniform4f(ship_light_uniform, ship_position.x, ship_position.y, ship_position.z, 1.0f);
-        ship_model = Matrix_Translate(ship_position.x, ship_position.y, ship_position.z);
-        glUniformMatrix4fv(model_uniform, 1 , GL_FALSE , glm::value_ptr(ship_model));
-        glUniform1i(object_id_uniform, SHIP);
-        DrawVirtualObject("ship");
-
-        glEnable(GL_CULL_FACE);
-
-
-        // Desenhamos o plano do chão
-        model = Matrix_Scale(GROUND_SIZE, 1.0f, GROUND_SIZE);
-        model = model * Matrix_Translate(0.0f,-1.1f,0.0f);
-        glUniformMatrix4fv(model_uniform, 1 , GL_FALSE , glm::value_ptr(model));
-        glUniform1i(object_id_uniform, PLANE);
-        DrawVirtualObject("plane");
-
-        //desenhamos o celeiro
-        glUniformMatrix4fv(model_uniform, 1 , GL_FALSE , glm::value_ptr(barn_model));
-        glUniform1i(object_id_uniform, BARN);
-        DrawVirtualObject("barn");
-
-        // desenhamos as vacas
-        if(under_abduction){
-            Maintain_abduction();
-        }
-
-        for(int i=0; i<NUM_COWS;i++){
-            DrawCow(i);
-        }
-
-        t1 = glfwGetTime();
-        t = t1 - t0;
-        if (t > 0.3){
-            MoveCow();
-            t0 = t1;
-        }
-
-        // Imprimimos na tela os ângulos de Euler que controlam a rotação do
-        // terceiro cubo.
-        TextRendering_ShowInfo(window);
-
-
-        // Imprimimos na tela informação sobre o número de quadros renderizados
-        // por segundo (frames per second).
-        TextRendering_ShowFramesPerSecond(window);
-
-        // O framebuffer onde a OpenGL executa as operações de renderização não
-        // é o mesmo que está sendo mostrado para o usuário, caso contrário
-        // seria possível ver artefatos conhecidos como "screen tearing". A
-        // chamada abaixo faz a troca dos buffers, mostrando para o usuário
-        // tudo que foi renderizado pelas funções acima.
-        glfwSwapBuffers(window);
 
         // Verifica com o sistema operacional se houve alguma interação do
         // usuário (teclado, mouse, ...). Caso positivo, as funções de callback
         // definidas anteriormente usando glfwSet*Callback() serão chamadas
         // pela biblioteca GLFW.
         glfwPollEvents();
+
 
     }
 
