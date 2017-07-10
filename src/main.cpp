@@ -323,16 +323,14 @@ int main(int argc, char* argv[])
             glfwSwapBuffers(window);
 
         }else{
-            bool will_continue = false;
+
+
 
             score = abductedCows * SCORE_ABDUCT + murderedCows * SCORE_KILL;
 
-            //printar o score como???
             TextRendering_ShowScore(window);
+            glfwSwapBuffers(window);
 
-            /*if(!will_continue){
-                glfwSetWindowShouldClose(window, GL_TRUE);
-            }*/
         }
 
 
